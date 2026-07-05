@@ -1,0 +1,12 @@
+# This is a Node.js / Next.js project. Vercel uses package.json for dependency installation.
+# The versions below are provided for reference only.
+next==16.2.6
+react==19.2.6
+react-dom==19.2.6
+bcryptjs==3.0.3
+dotenv==17.3.1
+drizzle-orm==0.45.2
+jsonwebtoken==9.0.3
+lucide-react==1.23.0
+mysql2==3.22.5
+nodemailer==9.0.3

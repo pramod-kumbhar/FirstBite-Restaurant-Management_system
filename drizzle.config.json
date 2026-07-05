@@ -1,0 +1,8 @@
+
+{
+  "dialect": "mysql",
+  "schema": "./src/db/schema.ts",
+  "dbCredentials": {
+    "url": "mysql://root:Pamms%402002@127.0.0.1:3306/restaurant_db"
+  }
+}
