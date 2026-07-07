@@ -1,155 +1,237 @@
-import { drizzle } from "drizzle-orm/mysql2";
-import mysql from "mysql2/promise";
+import { mkdirSync } from "node:fs";
+import { dirname, isAbsolute, join } from "node:path";
+import Database from "better-sqlite3";
+import { drizzle } from "drizzle-orm/better-sqlite3";
 import * as schema from "./schema";
 
-const databaseUrl = process.env.DATABASE_URL;
+const sqlitePath = process.env.SQLITE_PATH || "data/restaurant.db";
+const resolvedSqlitePath = sqlitePath === ":memory:" || isAbsolute(sqlitePath)
+  ? sqlitePath
+  : join(process.cwd(), sqlitePath);
+
+if (resolvedSqlitePath !== ":memory:") {
+  mkdirSync(dirname(resolvedSqlitePath), { recursive: true });
+}
 
 const globalForDb = globalThis as typeof globalThis & {
-  __arenaNextJsMysqlPool?: mysql.Pool;
+  __firstBiteSqliteClient?: Database.Database;
 };
 
-let pool: mysql.Pool;
-let db: ReturnType<typeof drizzle> | any;
+const client =
+  globalForDb.__firstBiteSqliteClient ??
+  new Database(resolvedSqlitePath);
 
-if (!databaseUrl) {
-  console.warn("DATABASE_URL is not configured. The app will start in a degraded mode until a valid MySQL connection string is set.");
-  pool = mysql.createPool({
-    host: "127.0.0.1",
-    port: 3306,
-    user: "root",
-    password: "",
-    database: "restaurant_db",
-    waitForConnections: true,
-    connectionLimit: 1,
-    queueLimit: 0,
-  });
-} else {
-  pool =
-    globalForDb.__arenaNextJsMysqlPool ??
-    mysql.createPool({
-      uri: databaseUrl,
-      waitForConnections: true,
-      connectionLimit: 10,
-      queueLimit: 0,
-    });
+client.pragma("foreign_keys = ON");
+client.pragma("journal_mode = WAL");
 
-  if (process.env.NODE_ENV !== "production") {
-    globalForDb.__arenaNextJsMysqlPool = pool;
-  }
+if (process.env.NODE_ENV !== "production") {
+  globalForDb.__firstBiteSqliteClient = client;
 }
 
-db = drizzle(pool, { schema, mode: "default" as const });
+const db = drizzle(client, { schema });
 
-async function ensureUserApprovalColumn() {
-  try {
-    const [rows] = await pool.query(
-      `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'is_approved'`
+function ensureSchema() {
+  client.exec(`
+    CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      email TEXT NOT NULL UNIQUE,
+      password TEXT NOT NULL DEFAULT '',
+      phone TEXT,
+      address_line TEXT,
+      district TEXT,
+      state TEXT,
+      pincode TEXT,
+      role TEXT NOT NULL DEFAULT 'customer',
+      pin TEXT,
+      loyalty_points INTEGER NOT NULL DEFAULT 0,
+      is_email_verified INTEGER NOT NULL DEFAULT 0,
+      is_approved INTEGER NOT NULL DEFAULT 1,
+      email_verification_token TEXT,
+      email_verified_at INTEGER,
+      password_reset_token TEXT,
+      password_reset_expires_at INTEGER,
+      joined_at INTEGER NOT NULL DEFAULT (cast((julianday('now') - 2440587.5) * 86400000 as integer))
     );
-    const columns = Array.isArray(rows) ? rows : [];
-    if (columns.length === 0) {
-      await db.execute(`ALTER TABLE users ADD COLUMN is_approved BOOLEAN NOT NULL DEFAULT TRUE`);
-    }
-  } catch (error) {
-    console.warn('Unable to verify user approval column:', error);
-  }
-}
 
-async function ensurePasswordResetColumns() {
-  try {
-    const [rows] = await pool.query(
-      `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME IN ('password_reset_token', 'password_reset_expires_at')`
+    CREATE TABLE IF NOT EXISTS chefs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+      manager_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+      status TEXT NOT NULL DEFAULT 'active',
+      specialization TEXT,
+      joined_at INTEGER NOT NULL DEFAULT (cast((julianday('now') - 2440587.5) * 86400000 as integer))
     );
-    const columns = Array.isArray(rows) ? rows.map((row: any) => row.COLUMN_NAME) : [];
 
-    if (!columns.includes('password_reset_token')) {
-      await db.execute(`ALTER TABLE users ADD COLUMN password_reset_token VARCHAR(255) NULL`);
-    }
-    if (!columns.includes('password_reset_expires_at')) {
-      await db.execute(`ALTER TABLE users ADD COLUMN password_reset_expires_at TIMESTAMP NULL`);
-    }
-  } catch (error) {
-    console.warn('Unable to verify password reset columns:', error);
-  }
-}
-
-async function ensureUserAddressColumns() {
-  try {
-    const [rows] = await pool.query(
-      `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME IN ('address_line', 'district', 'state', 'pincode')`
+    CREATE TABLE IF NOT EXISTS waiters (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+      manager_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+      status TEXT NOT NULL DEFAULT 'active',
+      section TEXT,
+      joined_at INTEGER NOT NULL DEFAULT (cast((julianday('now') - 2440587.5) * 86400000 as integer))
     );
-    const columns = Array.isArray(rows)
-      ? rows.map((row: any) => row.COLUMN_NAME || row.COLUMN_NAME?.toLowerCase() || row.Field || '')
-      : [];
 
-    if (!columns.includes('address_line')) {
-      await db.execute(`ALTER TABLE users ADD COLUMN address_line VARCHAR(255) NULL`);
-    }
-    if (!columns.includes('district')) {
-      await db.execute(`ALTER TABLE users ADD COLUMN district VARCHAR(100) NULL`);
-    }
-    if (!columns.includes('state')) {
-      await db.execute(`ALTER TABLE users ADD COLUMN state VARCHAR(100) NULL`);
-    }
-    if (!columns.includes('pincode')) {
-      await db.execute(`ALTER TABLE users ADD COLUMN pincode VARCHAR(20) NULL`);
-    }
-  } catch (error: any) {
-    if (error?.errno === 1060 || String(error?.sqlMessage || '').includes('Duplicate column name')) {
-      // Column already exists in the schema, ignore safe duplicate column warnings.
-      return;
-    }
-    console.warn('Unable to verify user address columns:', error);
-  }
+    CREATE TABLE IF NOT EXISTS cashiers (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+      manager_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+      status TEXT NOT NULL DEFAULT 'active',
+      shift_preference TEXT,
+      joined_at INTEGER NOT NULL DEFAULT (cast((julianday('now') - 2440587.5) * 86400000 as integer))
+    );
+
+    CREATE TABLE IF NOT EXISTS categories (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      description TEXT,
+      image_url TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS menu_items (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      category_id INTEGER REFERENCES categories(id) ON DELETE CASCADE,
+      name TEXT NOT NULL,
+      description TEXT,
+      price TEXT NOT NULL,
+      is_available INTEGER NOT NULL DEFAULT 1,
+      is_vegetarian INTEGER NOT NULL DEFAULT 0,
+      is_vegan INTEGER NOT NULL DEFAULT 0,
+      is_gluten_free INTEGER NOT NULL DEFAULT 0,
+      image_url TEXT,
+      spice_level INTEGER NOT NULL DEFAULT 0,
+      preparation_time INTEGER NOT NULL DEFAULT 15
+    );
+
+    CREATE TABLE IF NOT EXISTS restaurant_tables (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      table_number TEXT NOT NULL UNIQUE,
+      capacity INTEGER NOT NULL,
+      status TEXT NOT NULL DEFAULT 'available',
+      qr_code_url TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS reservations (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      customer_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+      customer_name TEXT NOT NULL,
+      customer_phone TEXT NOT NULL,
+      table_id INTEGER REFERENCES restaurant_tables(id) ON DELETE SET NULL,
+      reservation_time INTEGER NOT NULL,
+      number_of_guests INTEGER NOT NULL,
+      status TEXT NOT NULL DEFAULT 'pending',
+      notes TEXT,
+      created_at INTEGER NOT NULL DEFAULT (cast((julianday('now') - 2440587.5) * 86400000 as integer))
+    );
+
+    CREATE TABLE IF NOT EXISTS orders (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      customer_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+      table_id INTEGER REFERENCES restaurant_tables(id) ON DELETE SET NULL,
+      order_type TEXT NOT NULL DEFAULT 'dine-in',
+      status TEXT NOT NULL DEFAULT 'pending',
+      total_amount TEXT NOT NULL,
+      gst_amount TEXT NOT NULL DEFAULT '0.00',
+      discount_amount TEXT NOT NULL DEFAULT '0.00',
+      final_amount TEXT NOT NULL,
+      coupon_code TEXT,
+      address TEXT,
+      notes TEXT,
+      created_at INTEGER NOT NULL DEFAULT (cast((julianday('now') - 2440587.5) * 86400000 as integer)),
+      updated_at INTEGER NOT NULL DEFAULT (cast((julianday('now') - 2440587.5) * 86400000 as integer))
+    );
+
+    CREATE TABLE IF NOT EXISTS order_items (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      order_id INTEGER REFERENCES orders(id) ON DELETE CASCADE,
+      menu_item_id INTEGER REFERENCES menu_items(id) ON DELETE CASCADE,
+      quantity INTEGER NOT NULL,
+      unit_price TEXT NOT NULL,
+      notes TEXT,
+      status TEXT NOT NULL DEFAULT 'pending'
+    );
+
+    CREATE TABLE IF NOT EXISTS suppliers (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      contact_person TEXT,
+      email TEXT,
+      phone TEXT,
+      address TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS inventory_items (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      quantity TEXT NOT NULL,
+      unit TEXT NOT NULL,
+      reorder_level TEXT NOT NULL,
+      cost_per_unit TEXT NOT NULL,
+      supplier_id INTEGER REFERENCES suppliers(id) ON DELETE SET NULL,
+      updated_at INTEGER NOT NULL DEFAULT (cast((julianday('now') - 2440587.5) * 86400000 as integer))
+    );
+
+    CREATE TABLE IF NOT EXISTS purchase_orders (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      supplier_id INTEGER REFERENCES suppliers(id) ON DELETE CASCADE,
+      item_name TEXT NOT NULL,
+      quantity TEXT NOT NULL,
+      cost TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'ordered',
+      ordered_at INTEGER NOT NULL DEFAULT (cast((julianday('now') - 2440587.5) * 86400000 as integer))
+    );
+
+    CREATE TABLE IF NOT EXISTS employee_shifts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+      date TEXT NOT NULL,
+      start_time TEXT NOT NULL,
+      end_time TEXT NOT NULL,
+      role TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'scheduled'
+    );
+
+    CREATE TABLE IF NOT EXISTS payments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      order_id INTEGER REFERENCES orders(id) ON DELETE CASCADE,
+      amount TEXT NOT NULL,
+      payment_method TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'completed',
+      transaction_id TEXT,
+      created_at INTEGER NOT NULL DEFAULT (cast((julianday('now') - 2440587.5) * 86400000 as integer))
+    );
+
+    CREATE TABLE IF NOT EXISTS coupons (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      code TEXT NOT NULL UNIQUE,
+      discount_type TEXT NOT NULL,
+      discount_value TEXT NOT NULL,
+      min_order_amount TEXT NOT NULL DEFAULT '0.00',
+      expiry_date TEXT NOT NULL,
+      is_active INTEGER NOT NULL DEFAULT 1
+    );
+
+    CREATE TABLE IF NOT EXISTS reviews (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      menu_item_id INTEGER REFERENCES menu_items(id) ON DELETE CASCADE,
+      customer_name TEXT NOT NULL,
+      rating INTEGER NOT NULL,
+      comment TEXT,
+      created_at INTEGER NOT NULL DEFAULT (cast((julianday('now') - 2440587.5) * 86400000 as integer))
+    );
+
+    CREATE TABLE IF NOT EXISTS expenses (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      description TEXT NOT NULL,
+      category TEXT NOT NULL,
+      amount TEXT NOT NULL,
+      date TEXT NOT NULL,
+      created_by TEXT,
+      created_at INTEGER NOT NULL DEFAULT (cast((julianday('now') - 2440587.5) * 86400000 as integer))
+    );
+  `);
 }
 
-async function ensureStaffTables() {
-  try {
-    await db.execute(`
-      CREATE TABLE IF NOT EXISTS chefs (
-        id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-        user_id BIGINT UNSIGNED UNIQUE,
-        manager_id BIGINT UNSIGNED NULL,
-        status VARCHAR(30) NOT NULL DEFAULT 'active',
-        specialization VARCHAR(100),
-        joined_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        CONSTRAINT fk_chefs_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-        CONSTRAINT fk_chefs_manager FOREIGN KEY (manager_id) REFERENCES users(id) ON DELETE SET NULL
-      )
-    `);
+ensureSchema();
 
-    await db.execute(`
-      CREATE TABLE IF NOT EXISTS waiters (
-        id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-        user_id BIGINT UNSIGNED UNIQUE,
-        manager_id BIGINT UNSIGNED NULL,
-        status VARCHAR(30) NOT NULL DEFAULT 'active',
-        section VARCHAR(100),
-        joined_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        CONSTRAINT fk_waiters_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-        CONSTRAINT fk_waiters_manager FOREIGN KEY (manager_id) REFERENCES users(id) ON DELETE SET NULL
-      )
-    `);
-
-    await db.execute(`
-      CREATE TABLE IF NOT EXISTS cashiers (
-        id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-        user_id BIGINT UNSIGNED UNIQUE,
-        manager_id BIGINT UNSIGNED NULL,
-        status VARCHAR(30) NOT NULL DEFAULT 'active',
-        shift_preference VARCHAR(100),
-        joined_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        CONSTRAINT fk_cashiers_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-        CONSTRAINT fk_cashiers_manager FOREIGN KEY (manager_id) REFERENCES users(id) ON DELETE SET NULL
-      )
-    `);
-  } catch (error) {
-    console.warn('Unable to ensure staff tables:', error);
-  }
-}
-
-void ensureUserApprovalColumn();
-void ensurePasswordResetColumns();
-void ensureUserAddressColumns();
-void ensureStaffTables();
-
-export { pool, db };
+export { client, db };

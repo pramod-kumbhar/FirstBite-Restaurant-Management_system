@@ -1,217 +1,218 @@
-import { mysqlTable, varchar, text, int, bigint, decimal, boolean, timestamp, serial, primaryKey } from 'drizzle-orm/mysql-core';
+import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
 import { relations } from 'drizzle-orm';
 
 // 1. USERS (Customers & Employees/Staff)
-export const users = mysqlTable('users', {
-  id: serial('id').primaryKey().autoincrement(),
-  name: varchar('name', { length: 100 }).notNull(),
-  email: varchar('email', { length: 150 }).notNull().unique(),
-  password: varchar('password', { length: 255 }).notNull().default(''),
-  phone: varchar('phone', { length: 20 }),
-  addressLine: varchar('address_line', { length: 255 }),
-  district: varchar('district', { length: 100 }),
-  state: varchar('state', { length: 100 }),
-  pincode: varchar('pincode', { length: 20 }),
-  role: varchar('role', { length: 30 }).notNull().default('customer'), // 'customer', 'manager', 'chef', 'waiter', 'cashier'
-  pin: varchar('pin', { length: 6 }), // Quick access pin for POS/terminal access
-  loyaltyPoints: int('loyalty_points').notNull().default(0),
-  isEmailVerified: boolean('is_email_verified').notNull().default(false),
-  isApproved: boolean('is_approved').notNull().default(true),
-  emailVerificationToken: varchar('email_verification_token', { length: 255 }),
-  emailVerifiedAt: timestamp('email_verified_at', { mode: 'date' }),
-  passwordResetToken: varchar('password_reset_token', { length: 255 }),
-  passwordResetExpiresAt: timestamp('password_reset_expires_at', { mode: 'date' }),
-  joinedAt: timestamp('joined_at', { mode: 'date' }).notNull().defaultNow(),
+export const users = sqliteTable('users', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  name: text('name', { length: 100 }).notNull(),
+  email: text('email', { length: 150 }).notNull().unique(),
+  password: text('password', { length: 255 }).notNull().default(''),
+  phone: text('phone', { length: 20 }),
+  addressLine: text('address_line', { length: 255 }),
+  district: text('district', { length: 100 }),
+  state: text('state', { length: 100 }),
+  pincode: text('pincode', { length: 20 }),
+  role: text('role', { length: 30 }).notNull().default('customer'), // 'customer', 'manager', 'chef', 'waiter', 'cashier'
+  pin: text('pin', { length: 6 }), // Quick access pin for POS/terminal access
+  loyaltyPoints: integer('loyalty_points').notNull().default(0),
+  isEmailVerified: integer('is_email_verified', { mode: 'boolean' }).notNull().default(false),
+  isApproved: integer('is_approved', { mode: 'boolean' }).notNull().default(true),
+  emailVerificationToken: text('email_verification_token', { length: 255 }),
+  emailVerifiedAt: integer('email_verified_at', { mode: 'timestamp_ms' }),
+  passwordResetToken: text('password_reset_token', { length: 255 }),
+  passwordResetExpiresAt: integer('password_reset_expires_at', { mode: 'timestamp_ms' }),
+  joinedAt: integer('joined_at', { mode: 'timestamp_ms' }).notNull().defaultNow(),
 });
 
 // 2. ROLE-SPECIFIC STAFF PROFILES
-export const chefs = mysqlTable('chefs', {
-  id: serial('id').primaryKey().autoincrement(),
-  userId: bigint('user_id', { mode: 'number' }).references(() => users.id, { onDelete: 'cascade' }).notNull().unique(),
-  managerId: bigint('manager_id', { mode: 'number' }).references(() => users.id, { onDelete: 'set null' }),
-  status: varchar('status', { length: 30 }).notNull().default('active'),
-  specialization: varchar('specialization', { length: 100 }),
-  joinedAt: timestamp('joined_at', { mode: 'date' }).notNull().defaultNow(),
+export const chefs = sqliteTable('chefs', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull().unique(),
+  managerId: integer('manager_id').references(() => users.id, { onDelete: 'set null' }),
+  status: text('status', { length: 30 }).notNull().default('active'),
+  specialization: text('specialization', { length: 100 }),
+  joinedAt: integer('joined_at', { mode: 'timestamp_ms' }).notNull().defaultNow(),
 });
 
-export const waiters = mysqlTable('waiters', {
-  id: serial('id').primaryKey().autoincrement(),
-  userId: bigint('user_id', { mode: 'number' }).references(() => users.id, { onDelete: 'cascade' }).notNull().unique(),
-  managerId: bigint('manager_id', { mode: 'number' }).references(() => users.id, { onDelete: 'set null' }),
-  status: varchar('status', { length: 30 }).notNull().default('active'),
-  section: varchar('section', { length: 100 }),
-  joinedAt: timestamp('joined_at', { mode: 'date' }).notNull().defaultNow(),
+export const waiters = sqliteTable('waiters', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull().unique(),
+  managerId: integer('manager_id').references(() => users.id, { onDelete: 'set null' }),
+  status: text('status', { length: 30 }).notNull().default('active'),
+  section: text('section', { length: 100 }),
+  joinedAt: integer('joined_at', { mode: 'timestamp_ms' }).notNull().defaultNow(),
 });
 
-export const cashiers = mysqlTable('cashiers', {
-  id: serial('id').primaryKey().autoincrement(),
-  userId: bigint('user_id', { mode: 'number' }).references(() => users.id, { onDelete: 'cascade' }).notNull().unique(),
-  managerId: bigint('manager_id', { mode: 'number' }).references(() => users.id, { onDelete: 'set null' }),
-  status: varchar('status', { length: 30 }).notNull().default('active'),
-  shiftPreference: varchar('shift_preference', { length: 100 }),
-  joinedAt: timestamp('joined_at', { mode: 'date' }).notNull().defaultNow(),
+export const cashiers = sqliteTable('cashiers', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull().unique(),
+  managerId: integer('manager_id').references(() => users.id, { onDelete: 'set null' }),
+  status: text('status', { length: 30 }).notNull().default('active'),
+  shiftPreference: text('shift_preference', { length: 100 }),
+  joinedAt: integer('joined_at', { mode: 'timestamp_ms' }).notNull().defaultNow(),
 });
 
 // 3. CATEGORIES
-export const categories = mysqlTable('categories', {
-  id: serial('id').primaryKey().autoincrement(),
-  name: varchar('name', { length: 100 }).notNull(),
+export const categories = sqliteTable('categories', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  name: text('name', { length: 100 }).notNull(),
   description: text('description'),
   imageUrl: text('image_url'),
 });
 
 // 4. MENU ITEMS
-export const menuItems = mysqlTable('menu_items', {
-  id: serial('id').primaryKey().autoincrement(),
-  categoryId: bigint('category_id', { mode: 'number' }).references(() => categories.id, { onDelete: 'cascade' }),
-  name: varchar('name', { length: 150 }).notNull(),
+export const menuItems = sqliteTable('menu_items', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  categoryId: integer('category_id').references(() => categories.id, { onDelete: 'cascade' }),
+  name: text('name', { length: 150 }).notNull(),
   description: text('description'),
-  price: decimal('price', { precision: 10, scale: 2 }).notNull(),
-  isAvailable: boolean('is_available').notNull().default(true),
-  isVegetarian: boolean('is_vegetarian').notNull().default(false),
-  isVegan: boolean('is_vegan').notNull().default(false),
-  isGlutenFree: boolean('is_gluten_free').notNull().default(false),
+  price: text('price').notNull(),
+  isAvailable: integer('is_available', { mode: 'boolean' }).notNull().default(true),
+  isVegetarian: integer('is_vegetarian', { mode: 'boolean' }).notNull().default(false),
+  isVegan: integer('is_vegan', { mode: 'boolean' }).notNull().default(false),
+  isGlutenFree: integer('is_gluten_free', { mode: 'boolean' }).notNull().default(false),
   imageUrl: text('image_url'),
-  spiceLevel: int('spice_level').notNull().default(0), // 0: None, 1: Low, 2: Medium, 3: High
-  preparationTime: int('preparation_time').notNull().default(15), // minutes
+  spiceLevel: integer('spice_level').notNull().default(0), // 0: None, 1: Low, 2: Medium, 3: High
+  preparationTime: integer('preparation_time').notNull().default(15), // minutes
 });
 
 // 5. RESTAURANT TABLES
-export const restaurantTables = mysqlTable('restaurant_tables', {
-  id: serial('id').primaryKey().autoincrement(),
-  tableNumber: varchar('table_number', { length: 10 }).notNull().unique(),
-  capacity: int('capacity').notNull(),
-  status: varchar('status', { length: 30 }).notNull().default('available'), // 'available', 'occupied', 'reserved'
+export const restaurantTables = sqliteTable('restaurant_tables', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  tableNumber: text('table_number', { length: 10 }).notNull().unique(),
+  capacity: integer('capacity').notNull(),
+  status: text('status', { length: 30 }).notNull().default('available'), // 'available', 'occupied', 'reserved'
   qrCodeUrl: text('qr_code_url'),
 });
 
 // 6. RESERVATIONS
-export const reservations = mysqlTable('reservations', {
-  id: serial('id').primaryKey().autoincrement(),
-  customerId: bigint('customer_id', { mode: 'number' }).references(() => users.id, { onDelete: 'set null' }),
-  customerName: varchar('customer_name', { length: 100 }).notNull(),
-  customerPhone: varchar('customer_phone', { length: 20 }).notNull(),
-  tableId: bigint('table_id', { mode: 'number' }).references(() => restaurantTables.id, { onDelete: 'set null' }),
-  reservationTime: timestamp('reservation_time', { mode: 'date' }).notNull(),
-  numberOfGuests: int('number_of_guests').notNull(),
-  status: varchar('status', { length: 30 }).notNull().default('pending'), // 'pending', 'confirmed', 'completed', 'cancelled'
+export const reservations = sqliteTable('reservations', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  customerId: integer('customer_id').references(() => users.id, { onDelete: 'set null' }),
+  customerName: text('customer_name', { length: 100 }).notNull(),
+  customerPhone: text('customer_phone', { length: 20 }).notNull(),
+  tableId: integer('table_id').references(() => restaurantTables.id, { onDelete: 'set null' }),
+  reservationTime: integer('reservation_time', { mode: 'timestamp_ms' }).notNull(),
+  numberOfGuests: integer('number_of_guests').notNull(),
+  status: text('status', { length: 30 }).notNull().default('pending'), // 'pending', 'confirmed', 'completed', 'cancelled'
   notes: text('notes'),
-  createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
+  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().defaultNow(),
 });
 
 // 7. ORDERS
-export const orders = mysqlTable('orders', {
-  id: serial('id').primaryKey().autoincrement(),
-  customerId: bigint('customer_id', { mode: 'number' }).references(() => users.id, { onDelete: 'set null' }),
-  tableId: bigint('table_id', { mode: 'number' }).references(() => restaurantTables.id, { onDelete: 'set null' }),
-  orderType: varchar('order_type', { length: 30 }).notNull().default('dine-in'), // 'dine-in', 'takeaway', 'delivery'
-  status: varchar('status', { length: 30 }).notNull().default('pending'), // 'pending', 'accepted', 'cooking', 'ready', 'served', 'completed', 'cancelled'
-  totalAmount: decimal('total_amount', { precision: 10, scale: 2 }).notNull(),
-  gstAmount: decimal('gst_amount', { precision: 10, scale: 2 }).notNull().default('0.00'),
-  discountAmount: decimal('discount_amount', { precision: 10, scale: 2 }).notNull().default('0.00'),
-  finalAmount: decimal('final_amount', { precision: 10, scale: 2 }).notNull(),
-  couponCode: varchar('coupon_code', { length: 50 }),
+export const orders = sqliteTable('orders', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  customerId: integer('customer_id').references(() => users.id, { onDelete: 'set null' }),
+  tableId: integer('table_id').references(() => restaurantTables.id, { onDelete: 'set null' }),
+  orderType: text('order_type', { length: 30 }).notNull().default('dine-in'), // 'dine-in', 'takeaway', 'delivery'
+  status: text('status', { length: 30 }).notNull().default('pending'), // 'pending', 'accepted', 'cooking', 'ready', 'served', 'completed', 'cancelled'
+  totalAmount: text('total_amount').notNull(),
+  gstAmount: text('gst_amount').notNull().default('0.00'),
+  discountAmount: text('discount_amount').notNull().default('0.00'),
+  finalAmount: text('final_amount').notNull(),
+  couponCode: text('coupon_code', { length: 50 }),
+  address: text('address'),
   notes: text('notes'),
-  createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
-  updatedAt: timestamp('updated_at', { mode: 'date' }).notNull().defaultNow(),
+  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().defaultNow(),
+  updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull().defaultNow(),
 });
 
 // 8. ORDER ITEMS
-export const orderItems = mysqlTable('order_items', {
-  id: serial('id').primaryKey().autoincrement(),
-  orderId: bigint('order_id', { mode: 'number' }).references(() => orders.id, { onDelete: 'cascade' }),
-  menuItemId: bigint('menu_item_id', { mode: 'number' }).references(() => menuItems.id, { onDelete: 'cascade' }),
-  quantity: int('quantity').notNull(),
-  unitPrice: decimal('unit_price', { precision: 10, scale: 2 }).notNull(),
+export const orderItems = sqliteTable('order_items', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  orderId: integer('order_id').references(() => orders.id, { onDelete: 'cascade' }),
+  menuItemId: integer('menu_item_id').references(() => menuItems.id, { onDelete: 'cascade' }),
+  quantity: integer('quantity').notNull(),
+  unitPrice: text('unit_price').notNull(),
   notes: text('notes'),
-  status: varchar('status', { length: 30 }).notNull().default('pending'), // 'pending', 'cooking', 'ready', 'served'
+  status: text('status', { length: 30 }).notNull().default('pending'), // 'pending', 'cooking', 'ready', 'served'
 });
 
 // 9. SUPPLIERS
-export const suppliers = mysqlTable('suppliers', {
-  id: serial('id').primaryKey().autoincrement(),
-  name: varchar('name', { length: 150 }).notNull(),
-  contactPerson: varchar('contact_person', { length: 100 }),
-  email: varchar('email', { length: 150 }),
-  phone: varchar('phone', { length: 20 }),
+export const suppliers = sqliteTable('suppliers', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  name: text('name', { length: 150 }).notNull(),
+  contactPerson: text('contact_person', { length: 100 }),
+  email: text('email', { length: 150 }),
+  phone: text('phone', { length: 20 }),
   address: text('address'),
 });
 
 // 10. INVENTORY ITEMS
-export const inventoryItems = mysqlTable('inventory_items', {
-  id: serial('id').primaryKey().autoincrement(),
-  name: varchar('name', { length: 150 }).notNull(),
-  quantity: decimal('quantity', { precision: 10, scale: 2 }).notNull(),
-  unit: varchar('unit', { length: 30 }).notNull(), // 'kg', 'ltr', 'pcs', 'pack'
-  reorderLevel: decimal('reorder_level', { precision: 10, scale: 2 }).notNull(),
-  costPerUnit: decimal('cost_per_unit', { precision: 10, scale: 2 }).notNull(),
-  supplierId: bigint('supplier_id', { mode: 'number' }).references(() => suppliers.id, { onDelete: 'set null' }),
-  updatedAt: timestamp('updated_at', { mode: 'date' }).notNull().defaultNow(),
+export const inventoryItems = sqliteTable('inventory_items', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  name: text('name', { length: 150 }).notNull(),
+  quantity: text('quantity').notNull(),
+  unit: text('unit', { length: 30 }).notNull(), // 'kg', 'ltr', 'pcs', 'pack'
+  reorderLevel: text('reorder_level').notNull(),
+  costPerUnit: text('cost_per_unit').notNull(),
+  supplierId: integer('supplier_id').references(() => suppliers.id, { onDelete: 'set null' }),
+  updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull().defaultNow(),
 });
 
 // 11. PURCHASE ORDERS
-export const purchaseOrders = mysqlTable('purchase_orders', {
-  id: serial('id').primaryKey().autoincrement(),
-  supplierId: bigint('supplier_id', { mode: 'number' }).references(() => suppliers.id, { onDelete: 'cascade' }),
-  itemName: varchar('item_name', { length: 150 }).notNull(),
-  quantity: decimal('quantity', { precision: 10, scale: 2 }).notNull(),
-  cost: decimal('cost', { precision: 10, scale: 2 }).notNull(),
-  status: varchar('status', { length: 30 }).notNull().default('ordered'), // 'ordered', 'received'
-  orderedAt: timestamp('ordered_at', { mode: 'date' }).notNull().defaultNow(),
+export const purchaseOrders = sqliteTable('purchase_orders', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  supplierId: integer('supplier_id').references(() => suppliers.id, { onDelete: 'cascade' }),
+  itemName: text('item_name', { length: 150 }).notNull(),
+  quantity: text('quantity').notNull(),
+  cost: text('cost').notNull(),
+  status: text('status', { length: 30 }).notNull().default('ordered'), // 'ordered', 'received'
+  orderedAt: integer('ordered_at', { mode: 'timestamp_ms' }).notNull().defaultNow(),
 });
 
 // 12. EMPLOYEE SHIFTS
-export const employeeShifts = mysqlTable('employee_shifts', {
-  id: serial('id').primaryKey().autoincrement(),
-  userId: bigint('user_id', { mode: 'number' }).references(() => users.id, { onDelete: 'cascade' }),
-  date: varchar('date', { length: 20 }).notNull(), // 'YYYY-MM-DD'
-  startTime: varchar('start_time', { length: 10 }).notNull(), // '09:00'
-  endTime: varchar('end_time', { length: 10 }).notNull(), // '17:00'
-  role: varchar('role', { length: 30 }).notNull(), // 'chef', 'waiter', 'cashier', 'manager'
-  status: varchar('status', { length: 30 }).notNull().default('scheduled'), // 'scheduled', 'completed', 'absent'
+export const employeeShifts = sqliteTable('employee_shifts', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }),
+  date: text('date', { length: 20 }).notNull(), // 'YYYY-MM-DD'
+  startTime: text('start_time', { length: 10 }).notNull(), // '09:00'
+  endTime: text('end_time', { length: 10 }).notNull(), // '17:00'
+  role: text('role', { length: 30 }).notNull(), // 'chef', 'waiter', 'cashier', 'manager'
+  status: text('status', { length: 30 }).notNull().default('scheduled'), // 'scheduled', 'completed', 'absent'
 });
 
 // 13. PAYMENTS
-export const payments = mysqlTable('payments', {
-  id: serial('id').primaryKey().autoincrement(),
-  orderId: bigint('order_id', { mode: 'number' }).references(() => orders.id, { onDelete: 'cascade' }),
-  amount: decimal('amount', { precision: 10, scale: 2 }).notNull(),
-  paymentMethod: varchar('payment_method', { length: 30 }).notNull(), // 'cash', 'card', 'upi', 'wallet'
-  status: varchar('status', { length: 30 }).notNull().default('completed'), // 'pending', 'completed', 'refunded'
-  transactionId: varchar('transaction_id', { length: 100 }),
-  createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
+export const payments = sqliteTable('payments', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  orderId: integer('order_id').references(() => orders.id, { onDelete: 'cascade' }),
+  amount: text('amount').notNull(),
+  paymentMethod: text('payment_method', { length: 30 }).notNull(), // 'cash', 'card', 'upi', 'wallet'
+  status: text('status', { length: 30 }).notNull().default('completed'), // 'pending', 'completed', 'refunded'
+  transactionId: text('transaction_id', { length: 100 }),
+  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().defaultNow(),
 });
 
 // 14. COUPONS
-export const coupons = mysqlTable('coupons', {
-  id: serial('id').primaryKey().autoincrement(),
-  code: varchar('code', { length: 50 }).notNull().unique(),
-  discountType: varchar('discount_type', { length: 30 }).notNull(), // 'percentage', 'fixed'
-  discountValue: decimal('discount_value', { precision: 10, scale: 2 }).notNull(),
-  minOrderAmount: decimal('min_order_amount', { precision: 10, scale: 2 }).notNull().default('0.00'),
-  expiryDate: varchar('expiry_date', { length: 20 }).notNull(), // 'YYYY-MM-DD'
-  isActive: boolean('is_active').notNull().default(true),
+export const coupons = sqliteTable('coupons', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  code: text('code', { length: 50 }).notNull().unique(),
+  discountType: text('discount_type', { length: 30 }).notNull(), // 'percentage', 'fixed'
+  discountValue: text('discount_value').notNull(),
+  minOrderAmount: text('min_order_amount').notNull().default('0.00'),
+  expiryDate: text('expiry_date', { length: 20 }).notNull(), // 'YYYY-MM-DD'
+  isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
 });
 
 // 15. REVIEWS
-export const reviews = mysqlTable('reviews', {
-  id: serial('id').primaryKey().autoincrement(),
-  menuItemId: bigint('menu_item_id', { mode: 'number' }).references(() => menuItems.id, { onDelete: 'cascade' }),
-  customerName: varchar('customer_name', { length: 100 }).notNull(),
-  rating: int('rating').notNull(), // 1 to 5
+export const reviews = sqliteTable('reviews', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  menuItemId: integer('menu_item_id').references(() => menuItems.id, { onDelete: 'cascade' }),
+  customerName: text('customer_name', { length: 100 }).notNull(),
+  rating: integer('rating').notNull(), // 1 to 5
   comment: text('comment'),
-  createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
+  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().defaultNow(),
 });
 
 // 16. EXPENSES
-export const expenses = mysqlTable('expenses', {
-  id: serial('id').primaryKey().autoincrement(),
-  description: varchar('description', { length: 255 }).notNull(),
-  category: varchar('category', { length: 100 }).notNull(), // 'Ingredients', 'Rent', 'Utilities', 'Salaries', 'Other'
-  amount: decimal('amount', { precision: 10, scale: 2 }).notNull(),
-  date: varchar('date', { length: 20 }).notNull(), // 'YYYY-MM-DD'
-  createdBy: varchar('created_by', { length: 100 }),
-  createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
+export const expenses = sqliteTable('expenses', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  description: text('description', { length: 255 }).notNull(),
+  category: text('category', { length: 100 }).notNull(), // 'Ingredients', 'Rent', 'Utilities', 'Salaries', 'Other'
+  amount: text('amount').notNull(),
+  date: text('date', { length: 20 }).notNull(), // 'YYYY-MM-DD'
+  createdBy: text('created_by', { length: 100 }),
+  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().defaultNow(),
 });
 
 // RELATIONS DEFINITIONS
@@ -334,3 +335,4 @@ export const reviewsRelations = relations(reviews, ({ one }) => ({
     references: [menuItems.id],
   }),
 }));
+

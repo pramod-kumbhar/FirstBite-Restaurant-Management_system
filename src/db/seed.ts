@@ -20,27 +20,25 @@ export async function isDatabaseSeeded() {
 export async function seedDatabase() {
   console.log("Seeding started...");
 
-  // 1. Clear existing table contents (MySQL TRUNCATE - disable foreign key checks first)
-  await db.execute(sql`SET FOREIGN_KEY_CHECKS = 0`);
-  await db.execute(sql`TRUNCATE TABLE reviews`);
-  await db.execute(sql`TRUNCATE TABLE payments`);
-  await db.execute(sql`TRUNCATE TABLE order_items`);
-  await db.execute(sql`TRUNCATE TABLE orders`);
-  await db.execute(sql`TRUNCATE TABLE reservations`);
-  await db.execute(sql`TRUNCATE TABLE employee_shifts`);
-  await db.execute(sql`TRUNCATE TABLE purchase_orders`);
-  await db.execute(sql`TRUNCATE TABLE inventory_items`);
-  await db.execute(sql`TRUNCATE TABLE suppliers`);
-  await db.execute(sql`TRUNCATE TABLE menu_items`);
-  await db.execute(sql`TRUNCATE TABLE categories`);
-  await db.execute(sql`TRUNCATE TABLE restaurant_tables`);
-  await db.execute(sql`TRUNCATE TABLE cashiers`);
-  await db.execute(sql`TRUNCATE TABLE waiters`);
-  await db.execute(sql`TRUNCATE TABLE chefs`);
-  await db.execute(sql`TRUNCATE TABLE users`);
-  await db.execute(sql`TRUNCATE TABLE coupons`);
-  await db.execute(sql`TRUNCATE TABLE expenses`);
-  await db.execute(sql`SET FOREIGN_KEY_CHECKS = 1`);
+  // 1. Clear existing table contents in dependency order.
+  await db.delete(reviews);
+  await db.delete(payments);
+  await db.delete(orderItems);
+  await db.delete(orders);
+  await db.delete(reservations);
+  await db.delete(employeeShifts);
+  await db.delete(purchaseOrders);
+  await db.delete(inventoryItems);
+  await db.delete(suppliers);
+  await db.delete(menuItems);
+  await db.delete(categories);
+  await db.delete(restaurantTables);
+  await db.delete(cashiers);
+  await db.delete(waiters);
+  await db.delete(chefs);
+  await db.delete(users);
+  await db.delete(coupons);
+  await db.delete(expenses);
 
   // 2. No default manager or customer accounts are seeded by default.
   const customerAlice = null;

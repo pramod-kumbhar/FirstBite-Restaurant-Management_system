@@ -368,9 +368,9 @@ export async function POST(request: NextRequest) {
         notes: notes || '',
         createdAt: new Date(),
         updatedAt: new Date()
-      });
+      }).returning({ id: orders.id });
 
-      const orderId = insertResult[0]?.insertId;
+      const orderId = insertResult[0]?.id;
 
       // 2. Add Order Items
       if (items && items.length > 0 && orderId) {
@@ -610,8 +610,8 @@ export async function POST(request: NextRequest) {
           loyaltyPoints: 0,
           isApproved: true,
           isEmailVerified: true,
-        });
-        resolvedUserId = Number(insertResult[0]?.insertId || 0);
+        }).returning({ id: users.id });
+        resolvedUserId = Number(insertResult[0]?.id || 0);
 
         if (resolvedUserId) {
           const loginUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/staff-login`;
