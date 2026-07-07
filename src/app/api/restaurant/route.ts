@@ -6,7 +6,7 @@ import {
   employeeShifts, payments, coupons, reviews, expenses, chefs, waiters, cashiers 
 } from '@/db/schema';
 import { seedDatabase, isDatabaseSeeded } from '@/db/seed';
-import { eq, desc, asc, and, sql } from 'drizzle-orm';
+import { eq, desc, asc, and, inArray, sql } from 'drizzle-orm';
 import { sendEmail } from '@/lib/email';
 import { hashPassword, verifyToken } from '@/lib/auth';
 import { cashierOrderNotificationHtml, chefOrderNotificationHtml, managerOrderNotificationHtml, orderConfirmationHtml, orderReadyHtml, paymentSuccessHtml, reservationConfirmationHtml, staffApprovalHtml, staffWelcomeEmailHtml, waiterOrderReceivedHtml } from '@/lib/email-templates';
@@ -352,11 +352,43 @@ export async function POST(request: NextRequest) {
     // 6. PLACE ORDER (CUSTOMER OR WAITER OR CASHIER)
     if (action === 'placeOrder') {
       const { customerId, customerEmail, customerName, tableId, orderType, address, items, notes, couponCode, discountAmount, totalAmount, finalAmount, gstAmount } = payload;
+      const normalizedItems = Array.isArray(items) ? items : [];
+
+      if (normalizedItems.length === 0) {
+        return NextResponse.json({ success: false, error: 'Cart is empty' }, { status: 400 });
+      }
+
+      const requestedMenuItemIds = [...new Set(normalizedItems.map((item: any) => Number(item.menuItemId)).filter(Boolean))];
+      const existingMenuItems = requestedMenuItemIds.length > 0
+        ? await db.select().from(menuItems).where(inArray(menuItems.id, requestedMenuItemIds))
+        : [];
+      const existingMenuItemIds = new Set(existingMenuItems.map((item: any) => Number(item.id)));
+      const invalidMenuItem = normalizedItems.find((item: any) => !existingMenuItemIds.has(Number(item.menuItemId)));
+
+      if (invalidMenuItem) {
+        return NextResponse.json({ success: false, error: 'One or more menu items are no longer available. Please refresh and try again.' }, { status: 400 });
+      }
+
+      const requestedCustomerId = Number(customerId || 0);
+      const validCustomer = requestedCustomerId
+        ? (await db.select({ id: users.id }).from(users).where(eq(users.id, requestedCustomerId)))[0]
+        : null;
+      const resolvedCustomerId = validCustomer?.id ?? null;
+
+      const requestedTableId = Number(tableId || 0);
+      const validTable = requestedTableId
+        ? (await db.select({ id: restaurantTables.id }).from(restaurantTables).where(eq(restaurantTables.id, requestedTableId)))[0]
+        : null;
+      const resolvedTableId = validTable?.id ?? null;
+
+      if (orderType === 'dine-in' && requestedTableId && !resolvedTableId) {
+        return NextResponse.json({ success: false, error: 'Selected table is no longer available. Please refresh and choose a table again.' }, { status: 400 });
+      }
       
       // 1. Create Order
       const insertResult = await db.insert(orders).values({
-        customerId: customerId || null,
-        tableId: tableId || null,
+        customerId: resolvedCustomerId,
+        tableId: resolvedTableId,
         orderType: orderType || 'dine-in',
         address: address || null,
         status: 'pending',
@@ -373,10 +405,10 @@ export async function POST(request: NextRequest) {
       const orderId = insertResult[0]?.id;
 
       // 2. Add Order Items
-      if (items && items.length > 0 && orderId) {
-        const itemValues = items.map((item: any) => ({
+      if (normalizedItems.length > 0 && orderId) {
+        const itemValues = normalizedItems.map((item: any) => ({
           orderId: orderId,
-          menuItemId: item.menuItemId,
+          menuItemId: Number(item.menuItemId),
           quantity: item.quantity,
           unitPrice: String(item.price),
           notes: item.notes || '',
@@ -386,27 +418,27 @@ export async function POST(request: NextRequest) {
       }
 
       // 3. Update table status to occupied if dine-in
-      if (tableId && orderType === 'dine-in') {
-        await db.update(restaurantTables).set({ status: 'occupied' }).where(eq(restaurantTables.id, tableId));
+      if (resolvedTableId && orderType === 'dine-in') {
+        await db.update(restaurantTables).set({ status: 'occupied' }).where(eq(restaurantTables.id, resolvedTableId));
       }
 
       // 4. Award loyalty points if customer ID provided
-      if (customerId) {
+      if (resolvedCustomerId) {
         const pointsEarned = Math.floor(Number(finalAmount) / 10); // 1 point per ₹10 spent
         await db.update(users)
           .set({ loyaltyPoints: sql`loyalty_points + ${pointsEarned}` })
-          .where(eq(users.id, customerId));
+          .where(eq(users.id, resolvedCustomerId));
       }
 
       // 5. Send order confirmation email (non-blocking - fire and forget)
-      if (orderId && items && items.length > 0) {
+      if (orderId && normalizedItems.length > 0) {
         (async () => {
           try {
             // Look up user to get email
             let resolvedCustomerEmail: string | undefined = customerEmail;
             let resolvedCustomerName: string | undefined = customerName;
-            if (customerId) {
-              const userData = await db.select().from(users).where(eq(users.id, customerId));
+            if (resolvedCustomerId) {
+              const userData = await db.select().from(users).where(eq(users.id, resolvedCustomerId));
               const matchedUser = userData[0];
               if (matchedUser && isCustomerRole(matchedUser.role)) {
                 resolvedCustomerEmail = resolvedCustomerEmail || matchedUser.email;
@@ -418,8 +450,8 @@ export async function POST(request: NextRequest) {
             if (resolvedCustomerEmail && resolvedCustomerName) {
               // Look up menu item names
               const itemDetails = await Promise.all(
-                items.map(async (item: any) => {
-                  const menuItem = await db.select().from(menuItems).where(eq(menuItems.id, item.menuItemId));
+                normalizedItems.map(async (item: any) => {
+                  const menuItem = await db.select().from(menuItems).where(eq(menuItems.id, Number(item.menuItemId)));
                   return {
                     name: menuItem[0]?.name || 'Unknown Item',
                     quantity: item.quantity,
@@ -431,13 +463,13 @@ export async function POST(request: NextRequest) {
 
               // Calculate max prep time
               const allMenuItems = await db.select().from(menuItems);
-              const maxPrepTime = items.reduce((max: number, item: any) => {
-                const mi = allMenuItems.find((m: any) => m.id === item.menuItemId);
+              const maxPrepTime = normalizedItems.reduce((max: number, item: any) => {
+                const mi = allMenuItems.find((m: any) => Number(m.id) === Number(item.menuItemId));
                 const prep = mi?.preparationTime || 15;
                 return Math.max(max, prep);
               }, 0);
 
-              const tableInfo = tableId ? await db.select().from(restaurantTables).where(eq(restaurantTables.id, tableId)) : [];
+              const tableInfo = resolvedTableId ? await db.select().from(restaurantTables).where(eq(restaurantTables.id, resolvedTableId)) : [];
 
               await sendEmail({
                 to: resolvedCustomerEmail,
@@ -952,3 +984,4 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
+

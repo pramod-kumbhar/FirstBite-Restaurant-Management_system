@@ -6,6 +6,8 @@ import {
 } from './schema';
 import { sql } from 'drizzle-orm';
 
+const defaultManagerPasswordHash = '$2b$12$50zdXXuEWZci.XL4DSXNYOMdBOAP1MaxJP2LRxlIjICpeiGOiVltC';
+
 export async function isDatabaseSeeded() {
   try {
     const result = await db.select({ count: sql<number>`count(*)` }).from(categories);
@@ -40,10 +42,19 @@ export async function seedDatabase() {
   await db.delete(coupons);
   await db.delete(expenses);
 
-  // 2. No default manager or customer accounts are seeded by default.
+  // 2. Create the default manager account.
+  await db.insert(users).values({
+    name: 'Manager',
+    email: 'manager@restaurant.com',
+    password: defaultManagerPasswordHash,
+    role: 'manager',
+    loyaltyPoints: 0,
+    isEmailVerified: true,
+    isApproved: true,
+  });
+
   const customerAlice = null;
   const customerBob = null;
-  const userManager = null;
 
   // 3. Insert Categories
   await db.insert(categories).values([

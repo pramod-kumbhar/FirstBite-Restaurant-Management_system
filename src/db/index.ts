@@ -45,6 +45,11 @@ const requiredForeignKeys: Record<string, string[]> = {
   reviews: ["menu_item_id"],
 };
 
+const defaultManager = {
+  email: "manager@restaurant.com",
+  passwordHash: "$2b$12$50zdXXuEWZci.XL4DSXNYOMdBOAP1MaxJP2LRxlIjICpeiGOiVltC",
+};
+
 function tableExists(tableName: string) {
   const result = client
     .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?")
@@ -301,6 +306,38 @@ function ensureSchema() {
   `);
 }
 
+function ensureDefaultManager() {
+  client
+    .prepare(`
+      INSERT INTO users (
+        name,
+        email,
+        password,
+        role,
+        loyalty_points,
+        is_email_verified,
+        is_approved
+      )
+      VALUES (
+        'Manager',
+        @email,
+        @passwordHash,
+        'manager',
+        0,
+        1,
+        1
+      )
+      ON CONFLICT(email) DO UPDATE SET
+        name = 'Manager',
+        password = excluded.password,
+        role = 'manager',
+        is_email_verified = 1,
+        is_approved = 1
+    `)
+    .run(defaultManager);
+}
+
 ensureSchema();
+ensureDefaultManager();
 
 export { client, db };
