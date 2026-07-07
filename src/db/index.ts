@@ -30,7 +30,76 @@ if (process.env.NODE_ENV !== "production") {
 
 const db = drizzle(client, { schema });
 
+const requiredForeignKeys: Record<string, string[]> = {
+  chefs: ["user_id", "manager_id"],
+  waiters: ["user_id", "manager_id"],
+  cashiers: ["user_id", "manager_id"],
+  menu_items: ["category_id"],
+  reservations: ["customer_id", "table_id"],
+  orders: ["customer_id", "table_id"],
+  order_items: ["order_id", "menu_item_id"],
+  inventory_items: ["supplier_id"],
+  purchase_orders: ["supplier_id"],
+  employee_shifts: ["user_id"],
+  payments: ["order_id"],
+  reviews: ["menu_item_id"],
+};
+
+function tableExists(tableName: string) {
+  const result = client
+    .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?")
+    .get(tableName);
+  return Boolean(result);
+}
+
+function schemaNeedsRebuild() {
+  for (const [tableName, columns] of Object.entries(requiredForeignKeys)) {
+    if (!tableExists(tableName)) {
+      continue;
+    }
+
+    const foreignKeys = client.prepare(`PRAGMA foreign_key_list(${tableName})`).all() as Array<{ from: string }>;
+    const foreignKeyColumns = new Set(foreignKeys.map((foreignKey) => foreignKey.from));
+
+    for (const column of columns) {
+      if (!foreignKeyColumns.has(column)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+function dropSchema() {
+  client.exec(`
+    DROP TABLE IF EXISTS reviews;
+    DROP TABLE IF EXISTS payments;
+    DROP TABLE IF EXISTS order_items;
+    DROP TABLE IF EXISTS orders;
+    DROP TABLE IF EXISTS reservations;
+    DROP TABLE IF EXISTS employee_shifts;
+    DROP TABLE IF EXISTS purchase_orders;
+    DROP TABLE IF EXISTS inventory_items;
+    DROP TABLE IF EXISTS suppliers;
+    DROP TABLE IF EXISTS menu_items;
+    DROP TABLE IF EXISTS categories;
+    DROP TABLE IF EXISTS restaurant_tables;
+    DROP TABLE IF EXISTS cashiers;
+    DROP TABLE IF EXISTS waiters;
+    DROP TABLE IF EXISTS chefs;
+    DROP TABLE IF EXISTS users;
+    DROP TABLE IF EXISTS coupons;
+    DROP TABLE IF EXISTS expenses;
+  `);
+}
+
 function ensureSchema() {
+  if (schemaNeedsRebuild()) {
+    console.warn("SQLite schema is missing required foreign keys. Rebuilding local SQLite tables.");
+    dropSchema();
+  }
+
   client.exec(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
