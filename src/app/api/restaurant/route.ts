@@ -164,7 +164,8 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { action, payload } = body;
+    const { action } = body;
+    const payload = body?.payload ?? {};
 
     if (!action) {
       return NextResponse.json({ success: false, error: "Action is required" }, { status: 400 });
