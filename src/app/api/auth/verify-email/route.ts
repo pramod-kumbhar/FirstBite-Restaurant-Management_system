@@ -3,18 +3,21 @@ import { eq } from 'drizzle-orm';
 import { db } from '@/db';
 import { users } from '@/db/schema';
 
-export async function GET(request: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
-    const token = request.nextUrl.searchParams.get('token');
-    if (!token) {
-      return NextResponse.json({ success: false, error: 'Verification token is required' }, { status: 400 });
+    const body = await request.json();
+    const email = String(body.email || '').trim().toLowerCase();
+    const code = String(body.code || '').trim();
+
+    if (!email || !code) {
+      return NextResponse.json({ success: false, error: 'Email and OTP code are required' }, { status: 400 });
     }
 
-    const matches = await db.select().from(users).where(eq(users.emailVerificationToken, token));
+    const matches = await db.select().from(users).where(eq(users.email, email));
     const user = matches[0];
 
-    if (!user) {
-      return NextResponse.json({ success: false, error: 'This verification link is invalid or has expired.' }, { status: 404 });
+    if (!user || user.emailVerificationToken !== code) {
+      return NextResponse.json({ success: false, error: 'Invalid email or OTP code' }, { status: 404 });
     }
 
     if (user.isEmailVerified) {

@@ -8,6 +8,10 @@ export const users = mysqlTable('users', {
   email: varchar('email', { length: 150 }).notNull().unique(),
   password: varchar('password', { length: 255 }).notNull().default(''),
   phone: varchar('phone', { length: 20 }),
+  addressLine: varchar('address_line', { length: 255 }),
+  district: varchar('district', { length: 100 }),
+  state: varchar('state', { length: 100 }),
+  pincode: varchar('pincode', { length: 20 }),
   role: varchar('role', { length: 30 }).notNull().default('customer'), // 'customer', 'manager', 'chef', 'waiter', 'cashier'
   pin: varchar('pin', { length: 6 }), // Quick access pin for POS/terminal access
   loyaltyPoints: int('loyalty_points').notNull().default(0),

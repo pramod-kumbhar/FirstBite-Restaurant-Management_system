@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
 import { users } from '@/db/schema';
-import { generateVerificationToken, hashPassword, signToken } from '@/lib/auth';
+import { generateVerificationCode, hashPassword } from '@/lib/auth';
 import { sendEmail } from '@/lib/email';
 import { verifyEmailHtml, welcomeEmailHtml } from '@/lib/email-templates';
 import { eq } from 'drizzle-orm';
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
     }
 
     const password = await hashPassword(rawPassword);
-    const verificationToken = generateVerificationToken();
+    const verificationCode = generateVerificationCode();
     const isApproved = normalizedRole === 'customer' || normalizedRole === 'manager';
 
     try {
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
         loyaltyPoints: normalizedRole === 'customer' ? 50 : 0,
         isEmailVerified: false,
         isApproved,
-        emailVerificationToken: verificationToken,
+        emailVerificationToken: verificationCode,
       });
 
       const newUsers = await db.select().from(users).where(eq(users.email, normalizedEmail));
@@ -90,15 +90,12 @@ export async function POST(request: NextRequest) {
       };
     }
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-    const verificationUrl = `${appUrl}/verify-email?token=${verificationToken}`;
-
     let emailSent = false;
     try {
       const verificationEmailResult = await sendEmail({
         to: normalizedEmail,
         subject: 'Verify your CulinaryOS account',
-        html: verifyEmailHtml(normalizedName, verificationUrl),
+        html: verifyEmailHtml(normalizedName, verificationCode),
       });
 
       const welcomeEmailResult = await sendEmail({

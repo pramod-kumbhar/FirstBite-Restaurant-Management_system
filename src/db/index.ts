@@ -72,6 +72,36 @@ async function ensurePasswordResetColumns() {
   }
 }
 
+async function ensureUserAddressColumns() {
+  try {
+    const [rows] = await pool.query(
+      `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME IN ('address_line', 'district', 'state', 'pincode')`
+    );
+    const columns = Array.isArray(rows)
+      ? rows.map((row: any) => row.COLUMN_NAME || row.COLUMN_NAME?.toLowerCase() || row.Field || '')
+      : [];
+
+    if (!columns.includes('address_line')) {
+      await db.execute(`ALTER TABLE users ADD COLUMN address_line VARCHAR(255) NULL`);
+    }
+    if (!columns.includes('district')) {
+      await db.execute(`ALTER TABLE users ADD COLUMN district VARCHAR(100) NULL`);
+    }
+    if (!columns.includes('state')) {
+      await db.execute(`ALTER TABLE users ADD COLUMN state VARCHAR(100) NULL`);
+    }
+    if (!columns.includes('pincode')) {
+      await db.execute(`ALTER TABLE users ADD COLUMN pincode VARCHAR(20) NULL`);
+    }
+  } catch (error: any) {
+    if (error?.errno === 1060 || String(error?.sqlMessage || '').includes('Duplicate column name')) {
+      // Column already exists in the schema, ignore safe duplicate column warnings.
+      return;
+    }
+    console.warn('Unable to verify user address columns:', error);
+  }
+}
+
 async function ensureStaffTables() {
   try {
     await db.execute(`
@@ -119,6 +149,7 @@ async function ensureStaffTables() {
 
 void ensureUserApprovalColumn();
 void ensurePasswordResetColumns();
+void ensureUserAddressColumns();
 void ensureStaffTables();
 
 export { pool, db };

@@ -17,7 +17,7 @@ export function passwordResetHtml(name: string, resetUrl: string): string {
           <tr>
             <td style="padding:40px 30px">
               <p style="color:#475569;font-size:15px;line-height:1.6;margin:0 0 20px">
-                We received a request to reset the password for your CulinaryOS account.
+                We received a request to reset the password for your FirstBite account.
               </p>
               <table cellpadding="0" cellspacing="0" style="margin:24px 0">
                 <tr>
@@ -41,7 +41,7 @@ export function passwordResetHtml(name: string, resetUrl: string): string {
 </html>`;
 }
 
-export function verifyEmailHtml(name: string, verificationUrl: string): string {
+export function verifyEmailHtml(name: string, verificationCode: string): string {
   return `
 <!DOCTYPE html>
 <html>
@@ -60,17 +60,11 @@ export function verifyEmailHtml(name: string, verificationUrl: string): string {
           <tr>
             <td style="padding:40px 30px">
               <p style="color:#475569;font-size:15px;line-height:1.6;margin:0 0 20px">
-                Please confirm your email address to activate your CulinaryOS account.
+                Use the code below to verify your FirstBite account.
               </p>
-              <table cellpadding="0" cellspacing="0" style="margin:24px 0">
-                <tr>
-                  <td align="center" style="background:#2563eb;border-radius:12px;padding:14px 32px">
-                    <a href="${verificationUrl}" style="color:#ffffff;font-size:15px;font-weight:bold;text-decoration:none">
-                      Verify Email
-                    </a>
-                  </td>
-                </tr>
-              </table>
+              <div style="background:#f8fafc;border-radius:16px;padding:24px;text-align:center;margin:24px 0">
+                <p style="font-size:32px;font-weight:700;letter-spacing:0.18em;margin:0;color:#111827">${verificationCode}</p>
+              </div>
               <p style="color:#94a3b8;font-size:13px;margin:20px 0 0;border-top:1px solid #e2e8f0;padding-top:20px">
                 If you did not create this account, you can ignore this email.
               </p>
@@ -225,7 +219,7 @@ export function staffWelcomeEmailHtml({ name, role, email, password, loginUrl }:
     <tr>
       <td align="center" style="padding:40px 20px">
         <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08)">
-          <tr><td style="background:#0f766e;padding:30px;text-align:center"><h1 style="color:#ffffff;font-size:24px;margin:0">👋 Welcome to CulinaryOS</h1></td></tr>
+          <tr><td style="background:#0f766e;padding:30px;text-align:center"><h1 style="color:#ffffff;font-size:24px;margin:0">👋 Welcome to FirstBite</h1></td></tr>
           <tr><td style="padding:30px">
             <h2 style="color:#1e293b;font-size:18px;margin:0 0 8px">Hello ${name},</h2>
             <p style="color:#475569;font-size:14px;line-height:1.6;margin:0 0 16px">Your ${role.toUpperCase()} account has been created successfully. Use the details below to sign in.</p>
@@ -327,7 +321,7 @@ export function welcomeEmailHtml(name: string): string {
         <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08)">
           <tr>
             <td style="background:#e11d48;padding:40px 30px;text-align:center">
-              <h1 style="color:#ffffff;font-size:28px;margin:0">🍽 CulinaryOS</h1>
+              <h1 style="color:#ffffff;font-size:28px;margin:0">🍽 FirstBite</h1>
               <p style="color:#fda4af;font-size:16px;margin:8px 0 0">Welcome to the family!</p>
             </td>
           </tr>
@@ -335,7 +329,7 @@ export function welcomeEmailHtml(name: string): string {
             <td style="padding:40px 30px">
               <h2 style="color:#1e293b;font-size:22px;margin:0 0 16px">Hello ${name},</h2>
               <p style="color:#475569;font-size:15px;line-height:1.6;margin:0 0 20px">
-                Thank you for creating an account with <strong>CulinaryOS</strong> — your all-in-one restaurant management platform.
+                Thank you for creating an account with <strong>FirstBite</strong> — your all-in-one restaurant management platform.
               </p>
               <p style="color:#475569;font-size:15px;line-height:1.6;margin:0 0 20px">
                 You can now browse our gourmet menu, book tables, place orders, earn loyalty points, and track everything in real-time.
@@ -350,7 +344,7 @@ export function welcomeEmailHtml(name: string): string {
                 </tr>
               </table>
               <p style="color:#94a3b8;font-size:13px;margin:20px 0 0;border-top:1px solid #e2e8f0;padding-top:20px">
-                Cheers,<br>The CulinaryOS Team
+                Cheers,<br>The FirstBite Team
               </p>
             </td>
           </tr>
@@ -460,8 +454,8 @@ export function orderConfirmationHtml({
               </div>
 
               <p style="color:#94a3b8;font-size:13px;margin:16px 0 0;border-top:1px solid #e2e8f0;padding-top:16px;text-align:center">
-                Track your order in real-time at your CulinaryOS dashboard.<br>
-                The CulinaryOS Team 🍽
+                Track your order in real-time at your FirstBite dashboard.<br>
+                The FirstBite Team 🍽
               </p>
             </td>
           </tr>

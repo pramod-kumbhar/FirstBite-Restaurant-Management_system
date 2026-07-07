@@ -51,9 +51,13 @@ async function notifyStaffForOrder({
 }) {
   try {
     const staffUsers = await db.select().from(users);
+    const excludedManagerEmail = process.env.ORDER_EMAIL_EXCLUDE?.trim().toLowerCase() || 'manager@restaurant.com';
     for (const staff of staffUsers) {
       const normalizedRole = String(staff.role || '').toLowerCase();
       if (!roles.includes(normalizedRole) || !staff.email || staff.isApproved === false) {
+        continue;
+      }
+      if (staff.email.toLowerCase() === excludedManagerEmail) {
         continue;
       }
 
@@ -194,6 +198,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, message: "Database reset and seeded with demo data" });
     }
 
+    // CUSTOMER SELF-DELETION
+    if (action === 'deleteMyAccount') {
+      if (userRole !== 'customer') {
+        return NextResponse.json({ success: false, error: 'Only customers may delete their own account' }, { status: 403 });
+      }
+      await db.delete(users).where(eq(users.id, authUser.userId));
+      return NextResponse.json({ success: true, message: 'Your customer account has been deleted permanently.' });
+    }
+
+    if (action === 'saveMyProfile') {
+      const { name, phone, addressLine, district, state, pincode } = payload;
+      await db.update(users)
+        .set({ name, phone, addressLine, district, state, pincode })
+        .where(eq(users.id, authUser.userId));
+      return NextResponse.json({ success: true, message: 'Profile updated successfully.' });
+    }
+
     // 2. CREATE / UPDATE MENU ITEM
     if (action === 'saveMenuItem') {
       const { id, name, description, price, categoryId, isAvailable, isVegetarian, isVegan, isGlutenFree, spiceLevel, preparationTime, imageUrl } = payload;
@@ -330,13 +351,14 @@ export async function POST(request: NextRequest) {
 
     // 6. PLACE ORDER (CUSTOMER OR WAITER OR CASHIER)
     if (action === 'placeOrder') {
-      const { customerId, customerEmail, customerName, tableId, orderType, items, notes, couponCode, discountAmount, totalAmount, finalAmount, gstAmount } = payload;
+      const { customerId, customerEmail, customerName, tableId, orderType, address, items, notes, couponCode, discountAmount, totalAmount, finalAmount, gstAmount } = payload;
       
       // 1. Create Order
       const insertResult = await db.insert(orders).values({
         customerId: customerId || null,
         tableId: tableId || null,
         orderType: orderType || 'dine-in',
+        address: address || null,
         status: 'pending',
         totalAmount: String(totalAmount),
         gstAmount: String(gstAmount || 0),

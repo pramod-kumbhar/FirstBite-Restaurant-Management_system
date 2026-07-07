@@ -9,7 +9,7 @@ import {
   CheckCircle, Clock, AlertTriangle, AlertCircle, ShoppingCart, 
   MapPin, Send, HelpCircle, DollarSign, PieChart, Users2, 
   TrendingUp, Truck, Calendar, Sparkles, BookOpen, UserCheck, 
-  Smartphone, CreditCard, Wallet, Filter, Search, Grid, Receipt, RefreshCw, Layers3, Flame, X, Check, LogOut, Sun, Moon
+  Smartphone, CreditCard, Wallet, Filter, Search, Grid, Receipt, RefreshCw, Layers3, Flame, X, Check, LogOut
 } from 'lucide-react';
 
 export default function RestaurantManagementSystem({ initialUser }: { initialUser?: any }) {
@@ -44,7 +44,6 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
   // Current View / Role
   // 'customer', 'manager', 'chef', 'waiter', 'cashier'
   const [currentRole, setCurrentRole] = useState<'customer' | 'manager' | 'chef' | 'waiter' | 'cashier'>('customer');
-  const [themeMode, setThemeMode] = useState<'black' | 'white'>('black');
   
   // Navigation tabs inside roles
   const [activeManagerTab, setActiveManagerTab] = useState<'overview' | 'menu' | 'inventory' | 'shifts' | 'reservations' | 'expenses' | 'coupons'>('overview');
@@ -58,9 +57,15 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
   const [cartCoupon, setCartCoupon] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
   const [customerTable, setCustomerTable] = useState<string>('T1');
-  const [customerOrderType, setCustomerOrderType] = useState<'dine-in' | 'takeaway'>('dine-in');
+  const [customerOrderType, setCustomerOrderType] = useState<'dine-in' | 'delivery'>('dine-in');
   const [customerPaymentMethod, setCustomerPaymentMethod] = useState<'card' | 'upi' | 'wallet'>('card');
+  const [customerAddressLine, setCustomerAddressLine] = useState('');
+  const [customerDistrict, setCustomerDistrict] = useState('');
+  const [customerState, setCustomerState] = useState('');
+  const [customerPincode, setCustomerPincode] = useState('');
   const [customerNotes, setCustomerNotes] = useState('');
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
   
   // Custom dialogs/forms state
   const [activeModal, setActiveModal] = useState<string | null>(null); // 'addMenuItem', 'addReservation', 'addShift', 'addInventory', 'addSupplier', 'addCoupon', 'addExpense'
@@ -102,7 +107,9 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
   };
 
   const displayName = currentUser?.name || 'Customer';
-
+  const customerOrders = data.orders.filter((order: any) => order.customerId === currentUser?.id);
+  const activeCustomerOrders = customerOrders.filter((order: any) => !['completed', 'cancelled'].includes(order.status));
+  const latestCustomerOrder = activeCustomerOrders[0] || null;
   const [inventoryForm, setInventoryForm] = useState({
     name: '', quantity: '', unit: 'kg', reorderLevel: '5.0', costPerUnit: '', supplierId: ''
   });
@@ -203,6 +210,15 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
   }, [currentUser]);
 
   useEffect(() => {
+    if (currentUser) {
+      setCustomerAddressLine(currentUser.addressLine || '');
+      setCustomerDistrict(currentUser.district || '');
+      setCustomerState(currentUser.state || '');
+      setCustomerPincode(currentUser.pincode || '');
+    }
+  }, [currentUser]);
+
+  useEffect(() => {
     if (!authChecked || !currentUser) {
       return;
     }
@@ -220,6 +236,17 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
     window.localStorage.removeItem('authToken');
     setCurrentUser(null);
     router.push('/welcome');
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!currentUser) return;
+    const confirmed = window.confirm('This will permanently delete your customer account and cannot be undone. Continue?');
+    if (!confirmed) return;
+
+    const result = await handleAction('deleteMyAccount');
+    if (result && result.success) {
+      handleLogout();
+    }
   };
 
   const showToast = (message: string, type: 'success' | 'info' | 'error' = 'success') => {
@@ -245,15 +272,19 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
       if (result.success) {
         const successMessage = action === 'seed'
           ? "Database fully reset and seeded!"
-          : action === 'processPayment' && result.invoiceEmailSent === false
-            ? "Payment processed. Invoice email could not be delivered."
-            : action === 'processPayment'
-              ? "Payment processed and invoice email sent!"
-              : "Operation successful!";
+          : action === 'deleteMyAccount'
+            ? "Your account has been permanently deleted."
+            : action === 'processPayment' && result.invoiceEmailSent === false
+              ? "Payment processed. Invoice email could not be delivered."
+              : action === 'processPayment'
+                ? "Payment processed and invoice email sent!"
+                : "Operation successful!";
         showToast(successMessage, action === 'processPayment' && result.invoiceEmailSent === false ? 'info' : 'success');
         setActiveModal(null);
         setSelectedEditItem(null);
-        await fetchData();
+        if (action !== 'deleteMyAccount') {
+          await fetchData();
+        }
         return result;
       } else {
         showToast(result.error || "Something went wrong", 'error');
@@ -436,8 +467,28 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
       return;
     }
 
-    if (customerOrderType === 'takeaway' && !customerPaymentMethod) {
-      showToast('Please select a payment method for takeaway orders', 'error');
+    if (customerOrderType === 'delivery' && !customerAddressLine.trim()) {
+      showToast('Please enter your delivery address line.', 'error');
+      return;
+    }
+
+    if (customerOrderType === 'delivery' && !customerDistrict.trim()) {
+      showToast('Please enter your delivery district.', 'error');
+      return;
+    }
+
+    if (customerOrderType === 'delivery' && !customerState.trim()) {
+      showToast('Please enter your delivery state.', 'error');
+      return;
+    }
+
+    if (customerOrderType === 'delivery' && !customerPincode.trim()) {
+      showToast('Please enter your delivery pincode.', 'error');
+      return;
+    }
+
+    if (customerOrderType === 'delivery' && !customerPaymentMethod) {
+      showToast('Please select a payment method for delivery orders', 'error');
       return;
     }
 
@@ -451,7 +502,8 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
       customerName: currentUser?.name || null,
       tableId: customerOrderType === 'dine-in' ? (tObj?.id || null) : null,
       orderType: customerOrderType,
-      paymentMethod: customerOrderType === 'takeaway' ? customerPaymentMethod : null,
+      paymentMethod: customerOrderType === 'delivery' ? customerPaymentMethod : null,
+      address: customerOrderType === 'delivery' ? `${customerAddressLine.trim()}, ${customerDistrict.trim()}, ${customerState.trim()} - ${customerPincode.trim()}` : null,
       items: cart.map(c => ({
         menuItemId: c.menuItem.id,
         quantity: c.quantity,
@@ -472,6 +524,10 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
       setAppliedCoupon(null);
       setCartCoupon('');
       setCustomerNotes('');
+      setCustomerAddressLine('');
+      setCustomerDistrict('');
+      setCustomerState('');
+      setCustomerPincode('');
       setCustomerPaymentMethod('card');
       setActiveCustomerTab('orders');
       showToast("Order placed successfully! Check progress in tracker.", "success");
@@ -497,89 +553,131 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
   const lowStockItems = data.inventory.filter((item: any) => Number(item.quantity) <= Number(item.reorderLevel));
 
   return (
-    <div className={`min-h-screen ${themeMode === 'white' ? 'bg-white text-slate-900 selection:bg-slate-900/10 selection:text-slate-900' : 'bg-slate-950 text-slate-100 selection:bg-slate-200/20 selection:text-white'} font-sans flex flex-col`}>
+    <div className="min-h-screen overflow-x-hidden bg-white/80 text-slate-900 selection:bg-slate-900/10 selection:text-slate-900 font-sans flex flex-col" style={{ backgroundImage: 'radial-gradient(circle at top, rgba(255,255,255,0.85), transparent 40%), linear-gradient(180deg, rgba(255,255,255,0.9), rgba(248,250,252,0.95))' }}>
       
       {/* 1. TOP HEADER WITH ROLE SELECTOR */}
-      <header className={`sticky top-0 z-40 mx-3 mt-3 rounded-3xl px-3 py-3 sm:px-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between ${themeMode === 'white' ? 'border border-slate-200 bg-white shadow-sm' : 'border border-slate-700/80 bg-slate-950 shadow-[0_24px_60px_-30px_rgba(0,0,0,0.75)]'}`}>
+      <header className="sticky top-0 z-40 mx-3 mt-3 rounded-3xl px-3 py-3 sm:px-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between border border-white/10 bg-white/10 shadow-sm backdrop-blur-3xl">
         <div className="flex items-center justify-between gap-3 w-full lg:w-auto">
           <div className="bg-rose-600 text-white p-2.5 rounded-2xl shadow-md flex items-center justify-center">
             <Utensils className="h-6 w-6" />
           </div>
           <div>
-            <h1 className={`text-xl font-bold tracking-tight flex items-center gap-2 ${themeMode === 'white' ? 'text-slate-900' : 'text-white'}`}>
+            <h1 className="text-xl font-bold tracking-tight flex items-center gap-2 text-slate-900">
               FirstBite <span className="text-xs bg-rose-100 text-rose-700 font-semibold px-2 py-0.5 rounded-full">v2.1 PRO</span>
             </h1>
-            <p className={`text-xs ${themeMode === 'white' ? 'text-slate-500' : 'text-slate-300'}`}>Modern restaurant ordering, reservations, and operations</p>
+            <p className="text-xs text-slate-500">Modern restaurant ordering, reservations, and operations</p>
           </div>
         </div>
 
         {/* ROLE SWITCHER */}
-        <div className="bg-slate-100 p-1 rounded-xl flex flex-wrap items-center gap-1 border border-slate-200 w-full lg:w-auto overflow-x-auto">
-          <span className="text-xs font-bold text-slate-500 px-3 hidden lg:inline uppercase tracking-wider">Access Panel:</span>
-          {availableRoles.includes('customer') && (
-            <button 
-              onClick={() => { setCurrentRole('customer'); }}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${currentRole === 'customer' ? 'bg-white text-rose-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
-            >
-              <Users className="h-3.5 w-3.5" /> Customer
-            </button>
-          )}
-          {availableRoles.includes('manager') && (
-            <button 
-              onClick={() => { setCurrentRole('manager'); }}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${currentRole === 'manager' ? 'bg-white text-rose-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
-            >
-              <PieChart className="h-3.5 w-3.5" /> Manager
-            </button>
-          )}
-          {availableRoles.includes('chef') && (
-            <button 
-              onClick={() => { setCurrentRole('chef'); }}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${currentRole === 'chef' ? 'bg-white text-rose-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
-            >
-              <Flame className="h-3.5 w-3.5 animate-pulse" /> Chef
-            </button>
-          )}
-          {availableRoles.includes('waiter') && (
-            <button 
-              onClick={() => { setCurrentRole('waiter'); }}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${currentRole === 'waiter' ? 'bg-white text-rose-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
-            >
-              <UserCheck className="h-3.5 w-3.5" /> Waiter
-            </button>
-          )}
-          {availableRoles.includes('cashier') && (
-            <button 
-              onClick={() => { setCurrentRole('cashier'); }}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${currentRole === 'cashier' ? 'bg-white text-rose-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
-            >
-              <Receipt className="h-3.5 w-3.5" /> Cashier
-            </button>
-          )}
-        </div>
+        {currentUser?.role === 'customer' ? (
+          <div className="flex flex-col gap-1 w-full lg:w-auto">
+            <p className="text-sm font-bold text-slate-900">Welcome back, {currentUser?.name?.split(' ')[0] || 'Guest'}!</p>
+            <p className="text-xs text-slate-500">Ready to order? Browse menu, book a table, or track your delivery.</p>
+          </div>
+        ) : (
+          <div className="bg-slate-100 p-1 rounded-xl flex flex-wrap items-center gap-1 border border-slate-200 w-full lg:w-auto overflow-x-auto">
+            <span className="text-xs font-bold text-slate-500 px-3 hidden lg:inline uppercase tracking-wider">Access Panel:</span>
+            {availableRoles.includes('customer') && (
+              <button 
+                onClick={() => { setCurrentRole('customer'); }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${currentRole === 'customer' ? 'bg-white text-rose-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+              >
+                <Users className="h-3.5 w-3.5" /> Customer
+              </button>
+            )}
+            {availableRoles.includes('manager') && (
+              <button 
+                onClick={() => { setCurrentRole('manager'); }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${currentRole === 'manager' ? 'bg-white text-rose-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+              >
+                <PieChart className="h-3.5 w-3.5" /> Manager
+              </button>
+            )}
+            {availableRoles.includes('chef') && (
+              <button 
+                onClick={() => { setCurrentRole('chef'); }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${currentRole === 'chef' ? 'bg-white text-rose-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+              >
+                <Flame className="h-3.5 w-3.5 animate-pulse" /> Chef
+              </button>
+            )}
+            {availableRoles.includes('waiter') && (
+              <button 
+                onClick={() => { setCurrentRole('waiter'); }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${currentRole === 'waiter' ? 'bg-white text-rose-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+              >
+                <UserCheck className="h-3.5 w-3.5" /> Waiter
+              </button>
+            )}
+            {availableRoles.includes('cashier') && (
+              <button 
+                onClick={() => { setCurrentRole('cashier'); }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${currentRole === 'cashier' ? 'bg-white text-rose-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+              >
+                <Receipt className="h-3.5 w-3.5" /> Cashier
+              </button>
+            )}
+          </div>
+        )}
 
         {/* USER INFO & LOGOUT */}
         <div className="flex items-center gap-2 w-full lg:w-auto justify-end flex-wrap">
-          <button
-            type="button"
-            onClick={() => setThemeMode(themeMode === 'black' ? 'white' : 'black')}
-            className={`flex items-center justify-center rounded-xl border p-2 text-xs font-semibold transition ${themeMode === 'white' ? 'border-slate-300 bg-slate-50 text-slate-900 hover:bg-slate-100' : 'border-slate-600 bg-slate-900 text-white hover:bg-slate-800'}`}
-            aria-label="Toggle theme"
-          >
-            {themeMode === 'white' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
-          </button>
           <button 
             onClick={() => handleAction('seed')} 
             disabled={submitting}
             title="Reset DB and Seed Beautiful Demo Data"
-            className={`p-2 ${themeMode === 'white' ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 border-slate-300' : 'text-slate-200 hover:text-white hover:bg-slate-800 border-slate-700/80'} transition-all rounded-xl border flex items-center gap-1 text-xs font-medium`}
+            className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border-slate-300 transition-all rounded-xl border flex items-center gap-1 text-xs font-medium"
           >
             <RotateCcw className={`h-4 w-4 ${submitting ? 'animate-spin' : ''}`} />
             <span className="hidden sm:inline">Reset System</span>
           </button>
-          <div className="hidden md:flex flex-col items-end rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-right">
-            <span className="text-sm font-semibold text-slate-900">{currentUser?.name || 'Guest'}</span>
-            <span className="text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-500">{currentUser?.role || 'customer'}</span>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setProfileOpen((prev) => !prev)}
+              className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white/90 px-3 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
+            >
+              <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-rose-500 text-white">{(currentUser?.name || 'C').charAt(0)}</div>
+              <div className="text-left leading-tight">
+                <div className="text-sm font-semibold">{currentUser?.name || 'Guest'}</div>
+                <div className="text-[10px] uppercase tracking-[0.2em] text-slate-500">{currentUser?.role || 'customer'}</div>
+              </div>
+            </button>
+            {profileOpen ? (
+              <div className="absolute right-0 top-full mt-3 w-72 rounded-3xl border border-slate-200 bg-white p-4 shadow-2xl">
+                <div className="flex items-center justify-between gap-2 mb-3">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.24em] text-rose-500">Your profile</p>
+                    <p className="text-sm font-bold text-slate-900">{currentUser?.name || 'Guest User'}</p>
+                  </div>
+                  <span className={`text-[10px] rounded-full px-2 py-1 font-semibold ${currentUser?.isEmailVerified ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                    {currentUser?.isEmailVerified ? 'Verified' : 'Verify OTP'}
+                  </span>
+                </div>
+                <div className="space-y-2 text-[13px] text-slate-600">
+                  <div className="flex justify-between"><span>Email</span><span className="font-semibold text-slate-900">{currentUser?.email || 'Not set'}</span></div>
+                  <div className="flex justify-between"><span>Phone</span><span className="font-semibold text-slate-900">{currentUser?.phone || 'Not set'}</span></div>
+                  <div className="flex justify-between"><span>Loyalty</span><span className="font-semibold text-slate-900">{currentUser?.loyaltyPoints ?? 0} pts</span></div>
+                  <div className="flex justify-between"><span>Orders</span><span className="font-semibold text-slate-900">{customerOrders.length}</span></div>
+                  <div className="flex justify-between"><span>Current status</span><span className="font-semibold text-slate-900">{latestCustomerOrder?.status?.toUpperCase() || 'No active order'}</span></div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => { setProfileOpen(false); router.push('/account-settings'); }}
+                  className="mt-4 w-full rounded-2xl bg-slate-950 text-white py-2 text-xs font-bold hover:bg-slate-800 transition"
+                >
+                  Account settings
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDeleteAccount}
+                  className="mt-3 w-full rounded-2xl bg-rose-500 text-white py-2 text-xs font-bold hover:bg-rose-600 transition"
+                >
+                  Delete account permanently
+                </button>
+              </div>
+            ) : null}
           </div>
           <button
             onClick={handleLogout}
@@ -634,39 +732,40 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                 </div>
               </div>
 
-              {/* Customer Tab Navigation */}
-              <div className="flex border-b border-slate-200 mb-6 gap-2 overflow-x-auto pb-1">
-                <button 
-                  onClick={() => setActiveCustomerTab('browse')}
-                  className={`px-4 py-2 font-bold text-sm whitespace-nowrap border-b-2 transition-all ${activeCustomerTab === 'browse' ? 'border-rose-600 text-rose-600' : 'border-transparent text-slate-500 hover:text-slate-900'}`}
-                >
-                  🍔 Digital Menu
-                </button>
-                <button 
-                  onClick={() => setActiveCustomerTab('reservations')}
-                  className={`px-4 py-2 font-bold text-sm whitespace-nowrap border-b-2 transition-all ${activeCustomerTab === 'reservations' ? 'border-rose-600 text-rose-600' : 'border-transparent text-slate-500 hover:text-slate-900'}`}
-                >
-                  📅 Table Reservations
-                </button>
-                <button 
-                  onClick={() => setActiveCustomerTab('orders')}
-                  className={`px-4 py-2 font-bold text-sm whitespace-nowrap border-b-2 transition-all ${activeCustomerTab === 'orders' ? 'border-rose-600 text-rose-600' : 'border-transparent text-slate-500 hover:text-slate-900'}`}
-                >
-                  🚚 Track Orders & History
-                </button>
-                <button 
-                  onClick={() => setActiveCustomerTab('reviews')}
-                  className={`px-4 py-2 font-bold text-sm whitespace-nowrap border-b-2 transition-all ${activeCustomerTab === 'reviews' ? 'border-rose-600 text-rose-600' : 'border-transparent text-slate-500 hover:text-slate-900'}`}
-                >
-                  ⭐ Reviews & Feedback
-                </button>
+              <div className="mb-6 rounded-3xl bg-white/20 border border-white/10 shadow-sm">
+                <div className="flex flex-nowrap items-center gap-3 overflow-x-auto whitespace-nowrap px-4 py-3 text-sm text-slate-600">
+                  <button 
+                    onClick={() => setActiveCustomerTab('browse')}
+                    className={`min-w-fit rounded-full px-4 py-2 font-semibold transition ${activeCustomerTab === 'browse' ? 'bg-white text-rose-600 shadow-sm' : 'bg-white/10 text-slate-600 hover:bg-white/30'}`}
+                  >
+                    🍔 Digital Menu
+                  </button>
+                  <button 
+                    onClick={() => setActiveCustomerTab('reservations')}
+                    className={`min-w-fit rounded-full px-4 py-2 font-semibold transition ${activeCustomerTab === 'reservations' ? 'bg-white text-rose-600 shadow-sm' : 'bg-white/10 text-slate-600 hover:bg-white/30'}`}
+                  >
+                    📅 Table Reservations
+                  </button>
+                  <button 
+                    onClick={() => setActiveCustomerTab('orders')}
+                    className={`min-w-fit rounded-full px-4 py-2 font-semibold transition ${activeCustomerTab === 'orders' ? 'bg-white text-rose-600 shadow-sm' : 'bg-white/10 text-slate-600 hover:bg-white/30'}`}
+                  >
+                    🚚 Track Orders & History
+                  </button>
+                  <button 
+                    onClick={() => setActiveCustomerTab('reviews')}
+                    className={`min-w-fit rounded-full px-4 py-2 font-semibold transition ${activeCustomerTab === 'reviews' ? 'bg-white text-rose-600 shadow-sm' : 'bg-white/10 text-slate-600 hover:bg-white/30'}`}
+                  >
+                    ⭐ Reviews & Feedback
+                  </button>
+                </div>
               </div>
 
               {/* TAB 1: BROWSE MENU */}
               {activeCustomerTab === 'browse' && (
                 <div>
                   {/* Filters & Search */}
-                  <div className="flex flex-col md:flex-row gap-4 mb-6 bg-white p-4 rounded-2xl border border-slate-200">
+                  <div className="flex flex-col md:flex-row gap-4 mb-6 bg-white/15 backdrop-blur-3xl p-4 rounded-3xl border border-white/10 shadow-sm">
                     <div className="flex-1 relative">
                       <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
                       <input 
@@ -674,7 +773,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                         value={menuSearch}
                         onChange={(e) => setMenuSearch(e.target.value)}
                         placeholder="Search truffle fries, woodfired pizza, classic pasta..." 
-                        className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-rose-500"
+                        className="w-full pl-9 pr-4 py-2 bg-white/90 border border-white/20 rounded-2xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-rose-500"
                       />
                     </div>
                     
@@ -701,7 +800,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                   </div>
 
                   {/* Category Pill Buttons */}
-                  <div className="flex gap-2 overflow-x-auto pb-4">
+                  <div className="flex flex-wrap gap-2 pb-4">
                     {data.categories.map((cat: any) => (
                       <button
                         key={cat.id}
@@ -884,15 +983,28 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                 <div className="space-y-6">
                   <div className="bg-white border border-slate-200 rounded-3xl p-6">
                     <h3 className="text-lg font-extrabold text-slate-900 mb-4">Your Orders & Real-Time Tracker</h3>
-                    
-                    {data.orders.length === 0 ? (
+                    <div className="grid gap-3 md:grid-cols-3 mb-6 text-xs text-slate-500">
+                      <div className="rounded-3xl border border-slate-200 bg-slate-50 p-3">
+                        <p className="font-semibold text-slate-900">Active Order</p>
+                        <p>{latestCustomerOrder ? latestCustomerOrder.status.toUpperCase() : 'None'}</p>
+                      </div>
+                      <div className="rounded-3xl border border-slate-200 bg-slate-50 p-3">
+                        <p className="font-semibold text-slate-900">Total Orders</p>
+                        <p>{customerOrders.length}</p>
+                      </div>
+                      <div className="rounded-3xl border border-slate-200 bg-slate-50 p-3">
+                        <p className="font-semibold text-slate-900">Last Order Type</p>
+                        <p>{customerOrders[0]?.orderType?.toUpperCase() || 'N/A'}</p>
+                      </div>
+                    </div>
+                    {customerOrders.length === 0 ? (
                       <div className="text-center py-12 text-slate-400">
                         <ShoppingBag className="h-12 w-12 mx-auto mb-3" />
                         <p className="text-sm font-semibold">You have not placed any orders yet.</p>
                       </div>
                     ) : (
                       <div className="space-y-4">
-                        {data.orders.slice(0, 4).map((order: any) => {
+                        {customerOrders.map((order: any) => {
                           const table = data.tables.find((t: any) => t.id === order.tableId);
                           const items = data.orderItems.filter((oi: any) => oi.orderId === order.id);
                           
@@ -908,20 +1020,40 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                           };
 
                           return (
-                            <div key={order.id} className="border border-slate-200 rounded-2xl p-4 bg-slate-50/50">
-                              <div className="flex flex-wrap justify-between items-center gap-2 mb-3">
-                                <div>
-                                  <span className="text-xs font-bold text-slate-500">Order ID: #{order.id}</span>
-                                  <span className="mx-2 text-slate-300">|</span>
-                                  <span className="text-xs font-bold text-slate-900">Type: {order.orderType.toUpperCase()} {table ? `(Table ${table.tableNumber})` : ''}</span>
+                            <div key={order.id} className="border border-slate-200 rounded-2xl bg-slate-50/50 overflow-hidden">
+                              <button
+                                type="button"
+                                onClick={() => setSelectedOrderId(order.id === selectedOrderId ? null : order.id)}
+                                className="w-full p-4 text-left"
+                              >
+                                <div className="flex flex-wrap justify-between items-center gap-2 mb-3">
+                                  <div>
+                                    <span className="text-xs font-bold text-slate-500">Order ID: #{order.id}</span>
+                                    <span className="mx-2 text-slate-300">|</span>
+                                    <span className="text-xs font-bold text-slate-900">Type: {order.orderType.toUpperCase()} {table ? `(Table ${table.tableNumber})` : ''}</span>
+                                  </div>
+                                  <span className={`text-[11px] font-extrabold px-2.5 py-1 rounded-full border ${statusColors[order.status] || 'bg-slate-100'}`}>
+                                    ● {order.status.toUpperCase()}
+                                  </span>
                                 </div>
-                                <span className={`text-[11px] font-extrabold px-2.5 py-1 rounded-full border ${statusColors[order.status] || 'bg-slate-100'}`}>
-                                  ● {order.status.toUpperCase()}
-                                </span>
-                              </div>
 
-                              {/* Progress bar visualizer */}
-                              <div className="w-full bg-slate-200 rounded-full h-2 mb-4 overflow-hidden">
+                                <div className="grid gap-2 md:grid-cols-3 text-[11px] text-slate-500">
+                                  <div className="rounded-2xl border border-slate-200 bg-white p-3">
+                                    <p className="font-semibold text-slate-900">Ordered</p>
+                                    <p>{new Date(order.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}</p>
+                                  </div>
+                                  <div className="rounded-2xl border border-slate-200 bg-white p-3">
+                                    <p className="font-semibold text-slate-900">Payment</p>
+                                    <p>{order.paymentMethod ? order.paymentMethod.toUpperCase() : 'Offline'}</p>
+                                  </div>
+                                  <div className="rounded-2xl border border-slate-200 bg-white p-3">
+                                    <p className="font-semibold text-slate-900">Final total</p>
+                                    <p>{formatCurrency(order.finalAmount)}</p>
+                                  </div>
+                                </div>
+                              </button>
+
+                              <div className="w-full bg-slate-200 rounded-full h-2 mb-4 mx-4 overflow-hidden">
                                 <div 
                                   className="bg-rose-600 h-2 transition-all duration-1000" 
                                   style={{
@@ -935,22 +1067,66 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                                 />
                               </div>
 
-                              <div className="text-xs text-slate-600 space-y-1 mb-3">
-                                {items.map((oi: any) => {
-                                  const menuItem = data.menuItems.find((m: any) => m.id === oi.menuItemId);
-                                  return (
-                                    <div key={oi.id} className="flex justify-between">
-                                      <span>{oi.quantity}x {menuItem ? menuItem.name : 'Unknown Food Item'} {oi.notes ? `(${oi.notes})` : ''}</span>
-                                      <span className="font-semibold">{formatCurrency(Number(oi.unitPrice) * oi.quantity)}</span>
+                              {selectedOrderId === order.id ? (
+                                <div className="border-t border-slate-200 bg-slate-100 p-4 text-xs text-slate-700 space-y-3">
+                                  <div className="grid gap-2 md:grid-cols-2">
+                                    <div className="rounded-2xl bg-white p-3 border border-slate-200">
+                                      <p className="font-semibold text-slate-900">Order note</p>
+                                      <p>{order.notes || 'No special instructions'}</p>
                                     </div>
-                                  );
-                                })}
-                              </div>
-
-                              <div className="border-t border-slate-200 pt-2 flex justify-between items-center text-xs font-bold">
-                                <span className="text-slate-500">Total with GST (Coupon Applied)</span>
-                                <span className="text-base font-black text-rose-600">{formatCurrency(order.finalAmount)}</span>
-                              </div>
+                                    <div className="rounded-2xl bg-white p-3 border border-slate-200">
+                                      <p className="font-semibold text-slate-900">Coupon</p>
+                                      <p>{order.couponCode || 'None'}</p>
+                                    </div>
+                                  </div>
+                                  <div className="space-y-2">
+                                    <p className="font-semibold text-slate-900">Items</p>
+                                    {items.map((oi: any) => {
+                                      const menuItem = data.menuItems.find((m: any) => m.id === oi.menuItemId);
+                                      return (
+                                        <div key={oi.id} className="flex justify-between rounded-2xl bg-white p-3 border border-slate-200">
+                                          <div>
+                                            <p className="font-semibold text-slate-900">{menuItem ? menuItem.name : 'Unknown item'}</p>
+                                            <p className="text-[11px] text-slate-500">Qty: {oi.quantity} {oi.notes ? `• ${oi.notes}` : ''}</p>
+                                          </div>
+                                          <p className="font-bold text-slate-900">{formatCurrency(Number(oi.unitPrice) * oi.quantity)}</p>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                  <div className="grid gap-2 md:grid-cols-2">
+                                    <div className="rounded-2xl bg-white p-3 border border-slate-200">
+                                      <p className="font-semibold text-slate-900">Order status</p>
+                                      <p className="capitalize">{order.status}</p>
+                                    </div>
+                                    <div className="rounded-2xl bg-white p-3 border border-slate-200">
+                                      <p className="font-semibold text-slate-900">Order details</p>
+                                      <p>{order.orderType === 'dine-in' ? `Table ${table?.tableNumber}` : order.address || 'Delivery address not set'}</p>
+                                    </div>
+                                  </div>
+                                  <div className="mt-4 rounded-3xl border border-slate-200 bg-slate-100 p-4">
+                                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500 mb-3">Order Progress</p>
+                                    <div className="space-y-3">
+                                      {[
+                                        { step: 1, label: 'Confirmed by waiter', active: ['accepted','cooking','ready','served','completed'].includes(order.status) },
+                                        { step: 2, label: 'Sent to chef', active: ['cooking','ready','served','completed'].includes(order.status) },
+                                        { step: 3, label: 'Order accepted by chef', active: ['cooking','ready','served','completed'].includes(order.status) },
+                                        { step: 4, label: 'Your order is ready', active: ['ready','served','completed'].includes(order.status) },
+                                        { step: 5, label: order.orderType === 'delivery' ? 'Ready for delivery' : 'Ready to serve', active: ['served','completed'].includes(order.status) },
+                                      ].map((step) => (
+                                        <div key={step.step} className="flex items-center gap-3">
+                                          <div className={`h-6 w-6 rounded-full border flex items-center justify-center ${step.active ? 'bg-rose-600 border-rose-600 text-white' : 'bg-white border-slate-300 text-slate-400'}`}>
+                                            <span className="text-[10px] font-bold">{step.step}</span>
+                                          </div>
+                                          <div>
+                                            <p className={`text-sm ${step.active ? 'text-slate-900 font-semibold' : 'text-slate-500'}`}>{step.label}</p>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                </div>
+                              ) : null}
                             </div>
                           );
                         })}
@@ -960,7 +1136,6 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                 </div>
               )}
 
-              {/* TAB 4: REVIEWS */}
               {activeCustomerTab === 'reviews' && (
                 <div className="space-y-6">
                   {/* Review Submit form */}
@@ -1097,7 +1272,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                   ) : (
                     <div className="space-y-4">
                       {/* Cart List */}
-                      <div className="max-h-64 overflow-y-auto space-y-3 pr-1">
+                      <div className="space-y-3 pr-1">
                         {cart.map((item) => (
                           <div key={item.menuItem.id} className="flex justify-between items-start gap-2 border-b border-slate-100 pb-3">
                             <div className="flex-1">
@@ -1162,16 +1337,16 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                           <select 
                             value={customerOrderType}
                             onChange={(e: any) => {
-                              const nextType = e.target.value as 'dine-in' | 'takeaway';
+                              const nextType = e.target.value as 'dine-in' | 'delivery';
                               setCustomerOrderType(nextType);
-                              if (nextType === 'takeaway') {
+                              if (nextType === 'delivery') {
                                 setCustomerPaymentMethod('card');
                               }
                             }}
                             className="w-full bg-white border border-slate-300 p-1.5 rounded-lg text-xs text-slate-800"
                           >
                             <option value="dine-in">Dine-In (Table)</option>
-                            <option value="takeaway">Takeaway</option>
+                            <option value="delivery">Delivery</option>
                           </select>
                         </div>
                         {customerOrderType === 'dine-in' ? (
@@ -1188,30 +1363,93 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                             </select>
                           </div>
                         ) : (
-                          <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
-                            <div className="flex items-center justify-between">
-                              <label className="block text-[10px] font-bold text-slate-500 uppercase">Online Payment</label>
-                              <span className="rounded-full border border-slate-300 px-2 py-0.5 text-[10px] font-semibold text-slate-700">Secure</span>
+                          <>
+                            <div className="grid gap-3">
+                              <div>
+                                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Address line</label>
+                                <input
+                                  type="text"
+                                  value={customerAddressLine}
+                                  onChange={(e) => setCustomerAddressLine(e.target.value)}
+                                  className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs"
+                                  placeholder="Street, apartment, landmark"
+                                />
+                              </div>
+                              <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">District</label>
+                                  <input
+                                    type="text"
+                                    value={customerDistrict}
+                                    onChange={(e) => setCustomerDistrict(e.target.value)}
+                                    className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs"
+                                    placeholder="District"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">State</label>
+                                  <input
+                                    type="text"
+                                    value={customerState}
+                                    onChange={(e) => setCustomerState(e.target.value)}
+                                    className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs"
+                                    placeholder="State"
+                                  />
+                                </div>
+                              </div>
+                              <div>
+                                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Pincode</label>
+                                <input
+                                  type="text"
+                                  value={customerPincode}
+                                  onChange={(e) => setCustomerPincode(e.target.value)}
+                                  className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs"
+                                  placeholder="Postal code"
+                                />
+                              </div>
                             </div>
-                            <div className="mt-2 grid grid-cols-3 gap-2">
-                              {[
-                                { value: 'card', label: 'Card', icon: CreditCard },
-                                { value: 'upi', label: 'UPI', icon: Smartphone },
-                                { value: 'wallet', label: 'Wallet', icon: Wallet },
-                              ].map(({ value, label, icon: Icon }) => (
-                                <button
-                                  key={value}
-                                  type="button"
-                                  onClick={() => setCustomerPaymentMethod(value as 'card' | 'upi' | 'wallet')}
-                                  className={`flex items-center justify-center gap-1 rounded-xl border px-2 py-2 text-[11px] font-semibold transition ${customerPaymentMethod === value ? 'border-black bg-black text-white' : 'border-slate-200 bg-white text-slate-700 hover:border-black'}`}
+                            <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+                              <div className="flex items-center justify-between">
+                                <label className="block text-[10px] font-bold text-slate-500 uppercase">Payment Method</label>
+                                <span className="rounded-full border border-slate-300 px-2 py-0.5 text-[10px] font-semibold text-slate-700">Secure</span>
+                              </div>
+                              <div className="mt-2 grid grid-cols-3 gap-2">
+                                {[
+                                  { value: 'card', label: 'Card', icon: CreditCard },
+                                  { value: 'upi', label: 'UPI', icon: Smartphone },
+                                  { value: 'wallet', label: 'Wallet', icon: Wallet },
+                                ].map(({ value, label, icon: Icon }) => (
+                                  <button
+                                    key={value}
+                                    type="button"
+                                    onClick={() => setCustomerPaymentMethod(value as 'card' | 'upi' | 'wallet')}
+                                    className={`flex items-center justify-center gap-1 rounded-xl border px-2 py-2 text-[11px] font-semibold transition ${customerPaymentMethod === value ? 'border-black bg-black text-white' : 'border-slate-200 bg-white text-slate-700 hover:border-black'}`}
+                                  >
+                                    <Icon className="h-3.5 w-3.5" />
+                                    {label}
+                                  </button>
+                                ))}
+                              </div>
+                              <p className="mt-2 text-[10px] text-slate-500">Delivery orders require your full address and chosen payment method.</p>
+                            </div>
+
+                            <div className="mt-4 rounded-3xl border border-slate-200 bg-slate-50 p-4">
+                              <p className="text-xs uppercase tracking-[0.24em] text-slate-500 mb-2">Delivery map preview</p>
+                              <p className="text-sm text-slate-700 mb-3">Verify your delivery location with Google Maps before placing the order.</p>
+                              {customerAddressLine.trim() && customerDistrict.trim() && customerState.trim() && customerPincode.trim() ? (
+                                <a
+                                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${customerAddressLine}, ${customerDistrict}, ${customerState} ${customerPincode}`)}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex items-center gap-2 rounded-2xl bg-slate-950 px-4 py-2 text-xs font-bold text-white hover:bg-slate-800 transition"
                                 >
-                                  <Icon className="h-3.5 w-3.5" />
-                                  {label}
-                                </button>
-                              ))}
+                                  <MapPin className="h-4 w-4" /> Open in Google Maps
+                                </a>
+                              ) : (
+                                <p className="text-[11px] text-slate-500">Complete all address fields to open Google Maps.</p>
+                              )}
                             </div>
-                            <p className="mt-2 text-[10px] text-slate-500">Takeaway orders are paid online only.</p>
-                          </div>
+                          </>
                         )}
                       </div>
 
@@ -3118,7 +3356,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
 
       {/* FOOTER */}
       <footer className="bg-slate-900 border-t border-slate-800 text-slate-400 py-6 text-center text-xs mt-auto">
-        <p>© 2026 CulinaryOS. All rights reserved. Operating with dynamic state persistence & automated PostgreSQL transaction pipelines.</p>
+        <p>© 2026 FirstBite. All rights reserved. Operating with dynamic state persistence & automated MySQL transaction pipelines.</p>
       </footer>
     </div>
   );

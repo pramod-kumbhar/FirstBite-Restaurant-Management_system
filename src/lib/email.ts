@@ -2,7 +2,7 @@ import nodemailer from 'nodemailer';
 
 const smtpUser = process.env.SMTP_USER?.trim();
 const smtpPass = process.env.SMTP_PASS?.replace(/\s+/g, '').trim();
-const smtpFrom = process.env.SMTP_FROM?.trim() || 'CulinaryOS <noreply@culinaryos.com>';
+const smtpFrom = process.env.SMTP_FROM?.trim() || 'FirstBite <noreply@FirstBite.com>';
 const smtpHost = process.env.SMTP_HOST?.trim() || 'smtp.gmail.com';
 const smtpPort = parseInt(process.env.SMTP_PORT || '587', 10);
 const smtpSecure = process.env.SMTP_SECURE === 'true' || smtpPort === 465;

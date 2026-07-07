@@ -56,22 +56,22 @@ function ResetPasswordForm() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 px-4 py-12 text-white" style={{ backgroundImage: 'radial-gradient(circle at top, rgba(248,113,113,0.2), transparent 45%), linear-gradient(135deg, #111827 0%, #1f2937 100%)' }}>
-      <div className="mx-auto max-w-md rounded-3xl border border-white/10 bg-white/10 p-8 shadow-2xl backdrop-blur-xl">
-        <h1 className="text-3xl font-semibold">Set a new password</h1>
-        <p className="mt-3 text-sm text-slate-300">Enter your new password below.</p>
+    <div className="min-h-screen overflow-x-hidden bg-white/90 px-4 py-12 text-slate-900" style={{ backgroundImage: 'radial-gradient(circle at top, rgba(255,255,255,0.9), transparent 45%), linear-gradient(180deg, rgba(255,255,255,0.85), rgba(241,245,249,0.95))' }}>
+      <div className="mx-auto max-w-md w-full rounded-[32px] border border-slate-200/40 bg-white/80 p-8 shadow-2xl backdrop-blur-3xl ring-1 ring-slate-200/30">
+        <h1 className="text-3xl font-semibold text-slate-900">Set a new password</h1>
+        <p className="mt-3 text-sm text-slate-600">Enter your new password below.</p>
         <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
           <div>
             <label className="mb-2 block text-sm text-slate-300" htmlFor="password">New password</label>
-            <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none" required />
+            <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full rounded-xl border border-slate-200/40 bg-slate-50 px-4 py-3 text-slate-900 outline-none" required />
           </div>
           <div>
-            <label className="mb-2 block text-sm text-slate-300" htmlFor="confirmPassword">Confirm password</label>
-            <input id="confirmPassword" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none" required />
+            <label className="mb-2 block text-sm text-slate-600" htmlFor="confirmPassword">Confirm password</label>
+            <input id="confirmPassword" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="w-full rounded-xl border border-slate-200/40 bg-slate-50 px-4 py-3 text-slate-900 outline-none" required />
           </div>
-          {error ? <p className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 text-sm text-rose-200">{error}</p> : null}
-          {message ? <p className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-200">{message}</p> : null}
-          <button type="submit" disabled={loading} className="w-full rounded-full bg-rose-500 px-4 py-3 font-semibold text-white transition hover:bg-rose-600 disabled:opacity-70">{loading ? 'Updating…' : 'Update password'}</button>
+          {error ? <p className="rounded-lg border border-rose-200/60 bg-rose-100/80 p-3 text-sm text-rose-700">{error}</p> : null}
+          {message ? <p className="rounded-lg border border-emerald-200/60 bg-emerald-100/80 p-3 text-sm text-emerald-700">{message}</p> : null}
+          <button type="submit" disabled={loading} className="w-full rounded-full bg-rose-600 px-4 py-3 font-semibold text-white transition hover:bg-rose-700 disabled:opacity-70">{loading ? 'Updating…' : 'Update password'}</button>
         </form>
       </div>
     </div>

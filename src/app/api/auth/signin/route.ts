@@ -95,9 +95,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!user.isEmailVerified && user.role !== 'customer') {
+    if (!user.isEmailVerified) {
       return NextResponse.json(
-        { success: false, error: 'Please verify your email before signing in.' },
+        { success: false, error: 'Please verify your email with the OTP sent to your inbox before signing in.' },
         { status: 403 }
       );
     }

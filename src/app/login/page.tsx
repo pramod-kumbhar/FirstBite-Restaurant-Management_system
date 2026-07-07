@@ -80,7 +80,7 @@ function LoginForm() {
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(248,113,113,0.2),transparent_45%),linear-gradient(135deg,#111827_0%,#1f2937_100%)] px-4 py-12 text-white">
       <div className="mx-auto flex max-w-5xl flex-col gap-8 rounded-3xl border border-white/10 bg-white/10 p-8 shadow-2xl backdrop-blur-xl lg:flex-row lg:items-center">
         <div className="flex-1">
-          <p className="text-sm uppercase tracking-[0.3em] text-rose-300">CulinaryOS</p>
+          <p className="text-sm uppercase tracking-[0.3em] text-rose-300">FirstBite</p>
           <h1 className="mt-3 text-4xl font-semibold sm:text-5xl">Welcome back.</h1>
           <p className="mt-4 text-lg text-slate-300">Sign in to manage reservations, orders, and staff operations in real time.</p>
         </div>

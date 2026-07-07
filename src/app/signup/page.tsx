@@ -32,8 +32,9 @@ export default function SignupPage() {
         throw new Error(result.error || 'Account creation failed');
       }
 
-      setSuccess(result.message || 'Account created successfully. Please verify your email.');
-      setTimeout(() => router.push(`/login?message=${encodeURIComponent(result.message || 'Account created. Please verify your email.')}`), 1000);
+      const successMessage = result.message || 'Account created successfully. Please verify your email.';
+      setSuccess(successMessage);
+      setTimeout(() => router.push(`/verify-email?email=${encodeURIComponent(email)}&message=${encodeURIComponent(successMessage)}`), 1000);
     } catch (err: any) {
       setError(err.message || 'Unable to create your account.');
     } finally {
@@ -42,7 +43,7 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(248,113,113,0.2),_transparent_45%),linear-gradient(135deg,_#111827_0%,_#1f2937_100%)] px-4 py-12 text-white">
+    <div className="min-h-screen bg-linear-to-br from-slate-950 via-slate-900 to-slate-800 px-4 py-12 text-white">
       <div className="mx-auto flex max-w-5xl flex-col gap-8 rounded-3xl border border-white/10 bg-white/10 p-8 shadow-2xl backdrop-blur-xl lg:flex-row lg:items-center">
         <div className="flex-1">
           <p className="text-sm uppercase tracking-[0.3em] text-rose-300">CulinaryOS</p>
