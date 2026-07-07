@@ -565,16 +565,16 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
     <div className="min-h-screen overflow-x-hidden bg-white/80 text-slate-900 selection:bg-slate-900/10 selection:text-slate-900 font-sans flex flex-col" style={{ backgroundImage: 'radial-gradient(circle at top, rgba(255,255,255,0.85), transparent 40%), linear-gradient(180deg, rgba(255,255,255,0.9), rgba(248,250,252,0.95))' }}>
       
       {/* 1. TOP HEADER WITH ROLE SELECTOR */}
-      <header className="sticky top-0 z-40 mx-3 mt-3 rounded-3xl px-3 py-3 sm:px-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between border border-white/10 bg-white/10 shadow-sm backdrop-blur-3xl">
+      <header className="sticky top-0 z-40 mx-2 mt-2 rounded-2xl px-3 py-3 sm:mx-3 sm:mt-3 sm:rounded-3xl sm:px-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between border border-white/10 bg-white/90 shadow-sm backdrop-blur-3xl">
         <div className="flex items-center justify-between gap-3 w-full lg:w-auto">
           <div className="bg-rose-600 text-white p-2.5 rounded-2xl shadow-md flex items-center justify-center">
             <Utensils className="h-6 w-6" />
           </div>
           <div>
-            <h1 className="text-xl font-bold tracking-tight flex items-center gap-2 text-slate-900">
+            <h1 className="text-lg sm:text-xl font-bold tracking-tight flex flex-wrap items-center gap-2 text-slate-900">
               FirstBite <span className="text-xs bg-rose-100 text-rose-700 font-semibold px-2 py-0.5 rounded-full">v2.1 PRO</span>
             </h1>
-            <p className="text-xs text-slate-500">Modern restaurant ordering, reservations, and operations</p>
+            <p className="text-[11px] sm:text-xs text-slate-500">Modern restaurant ordering, reservations, and operations</p>
           </div>
         </div>
 
@@ -585,7 +585,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
             <p className="text-xs text-slate-500">Ready to order? Browse menu, book a table, or track your delivery.</p>
           </div>
         ) : (
-          <div className="bg-slate-100 p-1 rounded-xl flex flex-wrap items-center gap-1 border border-slate-200 w-full lg:w-auto overflow-x-auto">
+          <div className="bg-slate-100 p-1 rounded-xl flex flex-nowrap sm:flex-wrap items-center gap-1 border border-slate-200 w-full lg:w-auto overflow-x-auto">
             <span className="text-xs font-bold text-slate-500 px-3 hidden lg:inline uppercase tracking-wider">Access Panel:</span>
             {availableRoles.includes('customer') && (
               <button 
@@ -631,12 +631,12 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
         )}
 
         {/* USER INFO & LOGOUT */}
-        <div className="flex items-center gap-2 w-full lg:w-auto justify-end flex-wrap">
+        <div className="flex items-center gap-2 w-full lg:w-auto justify-between sm:justify-end flex-wrap">
           <button 
             onClick={() => handleAction('seed')} 
             disabled={submitting}
             title="Reset DB and Seed Beautiful Demo Data"
-            className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border-slate-300 transition-all rounded-xl border flex items-center gap-1 text-xs font-medium"
+            className="hidden sm:flex p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border-slate-300 transition-all rounded-xl border items-center gap-1 text-xs font-medium"
           >
             <RotateCcw className={`h-4 w-4 ${submitting ? 'animate-spin' : ''}`} />
             <span className="hidden sm:inline">Reset System</span>
@@ -645,16 +645,16 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
             <button
               type="button"
               onClick={() => setProfileOpen((prev) => !prev)}
-              className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white/90 px-3 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
+              className="flex items-center gap-2 sm:gap-3 rounded-2xl border border-slate-200 bg-white/90 px-2.5 sm:px-3 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
             >
-              <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-rose-500 text-white">{(currentUser?.name || 'C').charAt(0)}</div>
-              <div className="text-left leading-tight">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-rose-500 text-white">{(currentUser?.name || 'C').charAt(0)}</div>
+              <div className="hidden min-w-0 text-left leading-tight sm:block">
                 <div className="text-sm font-semibold">{currentUser?.name || 'Guest'}</div>
                 <div className="text-[10px] uppercase tracking-[0.2em] text-slate-500">{currentUser?.role || 'customer'}</div>
               </div>
             </button>
             {profileOpen ? (
-              <div className="absolute right-0 top-full mt-3 w-72 rounded-3xl border border-slate-200 bg-white p-4 shadow-2xl">
+              <div className="fixed left-3 right-3 top-24 z-50 rounded-3xl border border-slate-200 bg-white p-4 shadow-2xl sm:absolute sm:left-auto sm:right-0 sm:top-full sm:mt-3 sm:w-72">
                 <div className="flex items-center justify-between gap-2 mb-3">
                   <div>
                     <p className="text-xs uppercase tracking-[0.24em] text-rose-500">Your profile</p>
@@ -665,7 +665,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                   </span>
                 </div>
                 <div className="space-y-2 text-[13px] text-slate-600">
-                  <div className="flex justify-between"><span>Email</span><span className="font-semibold text-slate-900">{currentUser?.email || 'Not set'}</span></div>
+                  <div className="flex justify-between gap-3"><span>Email</span><span className="truncate font-semibold text-slate-900">{currentUser?.email || 'Not set'}</span></div>
                   <div className="flex justify-between"><span>Phone</span><span className="font-semibold text-slate-900">{currentUser?.phone || 'Not set'}</span></div>
                   <div className="flex justify-between"><span>Loyalty</span><span className="font-semibold text-slate-900">{currentUser?.loyaltyPoints ?? 0} pts</span></div>
                   <div className="flex justify-between"><span>Orders</span><span className="font-semibold text-slate-900">{customerOrders.length}</span></div>
@@ -700,7 +700,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
 
       {/* 2. TOAST NOTIFICATION */}
       {notification && (
-        <div className={`fixed top-16 right-4 z-50 max-w-sm w-full p-4 rounded-2xl shadow-xl flex items-start gap-3 border transition-all animate-bounce ${
+        <div className={`fixed left-3 right-3 top-20 z-50 p-4 rounded-2xl shadow-xl flex items-start gap-3 border transition-all animate-bounce sm:left-auto sm:right-4 sm:max-w-sm sm:w-full ${
           notification.type === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' :
           notification.type === 'error' ? 'bg-rose-50 border-rose-200 text-rose-800' :
           'bg-blue-50 border-blue-200 text-blue-800'
@@ -720,18 +720,18 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
         {/* ROLE A: CUSTOMER DASHBOARD                              */}
         {/* ======================================================= */}
         {currentRole === 'customer' && (
-          <div className="flex-1 flex flex-col lg:flex-row gap-6 p-4 md:p-6 max-w-7xl mx-auto w-full">
+          <div className="flex-1 flex flex-col lg:flex-row gap-4 lg:gap-6 p-3 sm:p-4 md:p-6 pb-28 lg:pb-6 max-w-7xl mx-auto w-full">
             
             {/* Customer Navigation and Main Body */}
             <div className="flex-1 flex flex-col">
               
               {/* Promo Banner */}
-              <div className="bg-linear-to-r from-rose-600 to-orange-500 rounded-3xl p-6 text-white mb-6 relative overflow-hidden shadow-lg">
+              <div className="bg-linear-to-r from-rose-600 to-orange-500 rounded-3xl p-4 sm:p-6 text-white mb-4 sm:mb-6 relative overflow-hidden shadow-lg">
                 <div className="relative z-10 max-w-lg">
                   <span className="bg-white/20 text-white text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded-full backdrop-blur-md">Loyalty Club Reward</span>
-                  <h2 className="text-2xl md:text-3xl font-black mt-3 leading-tight">Order Gourmet Food Straight to Your Table!</h2>
+                  <h2 className="text-xl sm:text-2xl md:text-3xl font-black mt-3 leading-tight">Order Gourmet Food Straight to Your Table!</h2>
                   <p className="text-white/90 text-sm mt-2 font-medium">Use QR table codes, browse real-time preparation levels, pay instantly and rack up points.</p>
-                  <div className="flex items-center gap-4 mt-4">
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-4">
                     <span className="bg-white text-rose-700 px-3 py-1 rounded-xl text-xs font-bold">Code: WELCOME10 (10% OFF)</span>
                     <span className="text-xs text-white/95 font-semibold">★ Current Loyalty Points: 340</span>
                   </div>
@@ -742,28 +742,28 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
               </div>
 
               <div className="mb-6 rounded-3xl bg-white/20 border border-white/10 shadow-sm">
-                <div className="flex flex-nowrap items-center gap-3 overflow-x-auto whitespace-nowrap px-4 py-3 text-sm text-slate-600">
+                <div className="flex flex-nowrap items-center gap-2 sm:gap-3 overflow-x-auto whitespace-nowrap px-3 sm:px-4 py-3 text-sm text-slate-600">
                   <button 
                     onClick={() => setActiveCustomerTab('browse')}
-                    className={`min-w-fit rounded-full px-4 py-2 font-semibold transition ${activeCustomerTab === 'browse' ? 'bg-white text-rose-600 shadow-sm' : 'bg-white/10 text-slate-600 hover:bg-white/30'}`}
+                    className={`min-w-fit rounded-full px-3 sm:px-4 py-2.5 font-semibold transition ${activeCustomerTab === 'browse' ? 'bg-white text-rose-600 shadow-sm' : 'bg-white/10 text-slate-600 hover:bg-white/30'}`}
                   >
                     🍔 Digital Menu
                   </button>
                   <button 
                     onClick={() => setActiveCustomerTab('reservations')}
-                    className={`min-w-fit rounded-full px-4 py-2 font-semibold transition ${activeCustomerTab === 'reservations' ? 'bg-white text-rose-600 shadow-sm' : 'bg-white/10 text-slate-600 hover:bg-white/30'}`}
+                    className={`min-w-fit rounded-full px-3 sm:px-4 py-2.5 font-semibold transition ${activeCustomerTab === 'reservations' ? 'bg-white text-rose-600 shadow-sm' : 'bg-white/10 text-slate-600 hover:bg-white/30'}`}
                   >
                     📅 Table Reservations
                   </button>
                   <button 
                     onClick={() => setActiveCustomerTab('orders')}
-                    className={`min-w-fit rounded-full px-4 py-2 font-semibold transition ${activeCustomerTab === 'orders' ? 'bg-white text-rose-600 shadow-sm' : 'bg-white/10 text-slate-600 hover:bg-white/30'}`}
+                    className={`min-w-fit rounded-full px-3 sm:px-4 py-2.5 font-semibold transition ${activeCustomerTab === 'orders' ? 'bg-white text-rose-600 shadow-sm' : 'bg-white/10 text-slate-600 hover:bg-white/30'}`}
                   >
                     🚚 Track Orders & History
                   </button>
                   <button 
                     onClick={() => setActiveCustomerTab('reviews')}
-                    className={`min-w-fit rounded-full px-4 py-2 font-semibold transition ${activeCustomerTab === 'reviews' ? 'bg-white text-rose-600 shadow-sm' : 'bg-white/10 text-slate-600 hover:bg-white/30'}`}
+                    className={`min-w-fit rounded-full px-3 sm:px-4 py-2.5 font-semibold transition ${activeCustomerTab === 'reviews' ? 'bg-white text-rose-600 shadow-sm' : 'bg-white/10 text-slate-600 hover:bg-white/30'}`}
                   >
                     ⭐ Reviews & Feedback
                   </button>
@@ -774,7 +774,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
               {activeCustomerTab === 'browse' && (
                 <div>
                   {/* Filters & Search */}
-                  <div className="flex flex-col md:flex-row gap-4 mb-6 bg-white/15 backdrop-blur-3xl p-4 rounded-3xl border border-white/10 shadow-sm">
+                  <div className="flex flex-col md:flex-row gap-3 sm:gap-4 mb-4 sm:mb-6 bg-white/15 backdrop-blur-3xl p-3 sm:p-4 rounded-3xl border border-white/10 shadow-sm">
                     <div className="flex-1 relative">
                       <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
                       <input 
@@ -782,26 +782,26 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                         value={menuSearch}
                         onChange={(e) => setMenuSearch(e.target.value)}
                         placeholder="Search truffle fries, woodfired pizza, classic pasta..." 
-                        className="w-full pl-9 pr-4 py-2 bg-white/90 border border-white/20 rounded-2xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-rose-500"
+                        className="w-full pl-9 pr-4 py-3 sm:py-2 bg-white/90 border border-white/20 rounded-2xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-rose-500"
                       />
                     </div>
                     
-                    <div className="flex flex-wrap gap-2 items-center">
+                    <div className="grid grid-cols-1 sm:flex sm:flex-wrap gap-2 items-center">
                       <button 
                         onClick={() => setMenuFilters({ ...menuFilters, veg: !menuFilters.veg })}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${menuFilters.veg ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-200 text-slate-600 bg-white'}`}
+                        className={`w-full sm:w-auto px-3 py-2 rounded-lg text-xs font-semibold border transition-all ${menuFilters.veg ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-200 text-slate-600 bg-white'}`}
                       >
                         🟢 Veg Only
                       </button>
                       <button 
                         onClick={() => setMenuFilters({ ...menuFilters, vegan: !menuFilters.vegan })}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${menuFilters.vegan ? 'bg-green-600 border-green-600 text-white' : 'border-slate-200 text-slate-600 bg-white'}`}
+                        className={`w-full sm:w-auto px-3 py-2 rounded-lg text-xs font-semibold border transition-all ${menuFilters.vegan ? 'bg-green-600 border-green-600 text-white' : 'border-slate-200 text-slate-600 bg-white'}`}
                       >
                         🌱 Vegan
                       </button>
                       <button 
                         onClick={() => setMenuFilters({ ...menuFilters, gf: !menuFilters.gf })}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${menuFilters.gf ? 'bg-amber-500 border-amber-500 text-white' : 'border-slate-200 text-slate-600 bg-white'}`}
+                        className={`w-full sm:w-auto px-3 py-2 rounded-lg text-xs font-semibold border transition-all ${menuFilters.gf ? 'bg-amber-500 border-amber-500 text-white' : 'border-slate-200 text-slate-600 bg-white'}`}
                       >
                         🌾 Gluten-Free
                       </button>
@@ -809,12 +809,12 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                   </div>
 
                   {/* Category Pill Buttons */}
-                  <div className="flex flex-wrap gap-2 pb-4">
+                  <div className="flex flex-nowrap sm:flex-wrap gap-2 pb-4 overflow-x-auto">
                     {data.categories.map((cat: any) => (
                       <button
                         key={cat.id}
                         onClick={() => setSelectedCategory(cat.id)}
-                        className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${selectedCategory === cat.id ? 'bg-rose-600 text-white shadow-md' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'}`}
+                        className={`px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${selectedCategory === cat.id ? 'bg-rose-600 text-white shadow-md' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'}`}
                       >
                         {cat.name}
                       </button>
@@ -822,7 +822,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                   </div>
 
                   {/* Menu Items Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 mt-2">
                     {data.menuItems
                       .filter((item: any) => !selectedCategory || item.categoryId === selectedCategory)
                       .filter((item: any) => item.name.toLowerCase().includes(menuSearch.toLowerCase()) || (item.description && item.description.toLowerCase().includes(menuSearch.toLowerCase())))
@@ -831,7 +831,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                       .filter((item: any) => !menuFilters.gf || item.isGlutenFree)
                       .map((item: any) => (
                         <div key={item.id} className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col group">
-                          <div className="h-40 overflow-hidden bg-slate-100 relative">
+                          <div className="h-44 sm:h-40 overflow-hidden bg-slate-100 relative">
                             <img 
                               src={item.imageUrl || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&auto=format&fit=crop&q=60"} 
                               alt={item.name}
@@ -1261,8 +1261,8 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
 
             {/* SIDE CART COLUMN (Only visible on Browse Menu Tab) */}
             {activeCustomerTab === 'browse' && (
-              <div className="w-full lg:w-96 shrink-0">
-                <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm sticky top-24">
+              <div className="w-full lg:w-96 shrink-0" id="mobile-checkout">
+                <div className="bg-white border border-slate-200 rounded-3xl p-4 sm:p-6 shadow-sm lg:sticky lg:top-24">
                   <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
                     <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
                       <ShoppingCart className="h-5 w-5 text-rose-600" /> Shopping Cart
@@ -1295,21 +1295,21 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                                   const val = e.target.value;
                                   setCart(cart.map(c => c.menuItem.id === item.menuItem.id ? { ...c, notes: val } : c));
                                 }}
-                                className="w-full mt-1.5 px-2 py-0.5 bg-slate-50 border border-slate-200 rounded text-[10px] focus:outline-none"
+                                className="w-full mt-1.5 px-2 py-2 sm:py-0.5 bg-slate-50 border border-slate-200 rounded text-xs sm:text-[10px] focus:outline-none"
                               />
                             </div>
 
                             <div className="flex items-center gap-1.5 mt-1">
                               <button 
                                 onClick={() => updateCartQty(item.menuItem.id, -1)}
-                                className="p-1 rounded bg-slate-100 hover:bg-slate-200 text-xs font-bold"
+                                className="h-8 w-8 rounded bg-slate-100 hover:bg-slate-200 text-xs font-bold"
                               >
                                 -
                               </button>
                               <span className="text-xs font-black w-4 text-center">{item.quantity}</span>
                               <button 
                                 onClick={() => updateCartQty(item.menuItem.id, 1)}
-                                className="p-1 rounded bg-slate-100 hover:bg-slate-200 text-xs font-bold"
+                                className="h-8 w-8 rounded bg-slate-100 hover:bg-slate-200 text-xs font-bold"
                               >
                                 +
                               </button>
@@ -1327,12 +1327,12 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                             placeholder="e.g. WELCOME10"
                             value={cartCoupon}
                             onChange={(e) => setCartCoupon(e.target.value)}
-                            className="flex-1 px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs uppercase"
+                            className="min-w-0 flex-1 px-2.5 py-2.5 sm:py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs uppercase"
                           />
                           <button 
                             type="button"
                             onClick={applyCouponToCart}
-                            className="bg-slate-800 text-white text-xs font-bold px-3 py-1.5 rounded-xl hover:bg-slate-900 transition-all"
+                            className="bg-slate-800 text-white text-xs font-bold px-3 py-2.5 sm:py-1.5 rounded-xl hover:bg-slate-900 transition-all"
                           >
                             Apply
                           </button>
@@ -1352,7 +1352,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                                 setCustomerPaymentMethod('card');
                               }
                             }}
-                            className="w-full bg-white border border-slate-300 p-1.5 rounded-lg text-xs text-slate-800"
+                            className="w-full bg-white border border-slate-300 p-2.5 sm:p-1.5 rounded-lg text-xs text-slate-800"
                           >
                             <option value="dine-in">Dine-In (Table)</option>
                             <option value="delivery">Delivery</option>
@@ -1364,7 +1364,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                             <select 
                               value={customerTable}
                               onChange={(e) => setCustomerTable(e.target.value)}
-                              className="w-full bg-slate-50 border border-slate-200 p-1.5 rounded-lg text-xs"
+                              className="w-full bg-slate-50 border border-slate-200 p-2.5 sm:p-1.5 rounded-lg text-xs"
                             >
                               {data.tables.map((t: any) => (
                                 <option key={t.id} value={t.tableNumber}>Table {t.tableNumber}</option>
@@ -1380,18 +1380,18 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                                   type="text"
                                   value={customerAddressLine}
                                   onChange={(e) => setCustomerAddressLine(e.target.value)}
-                                  className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs"
+                                  className="w-full bg-slate-50 border border-slate-200 p-3 sm:p-2 rounded-xl text-sm sm:text-xs"
                                   placeholder="Street, apartment, landmark"
                                 />
                               </div>
-                              <div className="grid grid-cols-2 gap-3">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div>
                                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">District</label>
                                   <input
                                     type="text"
                                     value={customerDistrict}
                                     onChange={(e) => setCustomerDistrict(e.target.value)}
-                                    className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs"
+                                    className="w-full bg-slate-50 border border-slate-200 p-3 sm:p-2 rounded-xl text-sm sm:text-xs"
                                     placeholder="District"
                                   />
                                 </div>
@@ -1401,7 +1401,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                                     type="text"
                                     value={customerState}
                                     onChange={(e) => setCustomerState(e.target.value)}
-                                    className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs"
+                                    className="w-full bg-slate-50 border border-slate-200 p-3 sm:p-2 rounded-xl text-sm sm:text-xs"
                                     placeholder="State"
                                   />
                                 </div>
@@ -1412,7 +1412,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                                   type="text"
                                   value={customerPincode}
                                   onChange={(e) => setCustomerPincode(e.target.value)}
-                                  className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs"
+                                  className="w-full bg-slate-50 border border-slate-200 p-3 sm:p-2 rounded-xl text-sm sm:text-xs"
                                   placeholder="Postal code"
                                 />
                               </div>
@@ -1422,7 +1422,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                                 <label className="block text-[10px] font-bold text-slate-500 uppercase">Payment Method</label>
                                 <span className="rounded-full border border-slate-300 px-2 py-0.5 text-[10px] font-semibold text-slate-700">Secure</span>
                               </div>
-                              <div className="mt-2 grid grid-cols-3 gap-2">
+                              <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-2">
                                 {[
                                   { value: 'card', label: 'Card', icon: CreditCard },
                                   { value: 'upi', label: 'UPI', icon: Smartphone },
@@ -1432,7 +1432,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                                     key={value}
                                     type="button"
                                     onClick={() => setCustomerPaymentMethod(value as 'card' | 'upi' | 'wallet')}
-                                    className={`flex items-center justify-center gap-1 rounded-xl border px-2 py-2 text-[11px] font-semibold transition ${customerPaymentMethod === value ? 'border-black bg-black text-white' : 'border-slate-200 bg-white text-slate-700 hover:border-black'}`}
+                                    className={`flex items-center justify-center gap-1 rounded-xl border px-2 py-2.5 sm:py-2 text-[11px] font-semibold transition ${customerPaymentMethod === value ? 'border-black bg-black text-white' : 'border-slate-200 bg-white text-slate-700 hover:border-black'}`}
                                   >
                                     <Icon className="h-3.5 w-3.5" />
                                     {label}
@@ -1441,8 +1441,8 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                               </div>
                               <p className="mt-2 text-[10px] text-slate-500">Delivery orders require your full address and chosen payment method.</p>
                               {customerPaymentMethod === 'upi' && (
-                                <div className="mt-3 grid grid-cols-[96px_1fr] gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-3">
-                                  <div className="flex h-24 w-24 items-center justify-center rounded-xl border border-emerald-200 bg-white p-1.5">
+                                <div className="mt-3 grid grid-cols-1 sm:grid-cols-[96px_1fr] gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-3">
+                                  <div className="mx-auto flex h-32 w-32 sm:h-24 sm:w-24 items-center justify-center rounded-xl border border-emerald-200 bg-white p-1.5">
                                     <img
                                       src={getDeliveryUpiQrUrl()}
                                       alt="UPI payment QR code"
@@ -1531,6 +1531,20 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                   )}
                 </div>
               </div>
+            )}
+
+            {activeCustomerTab === 'browse' && cart.length > 0 && (
+              <a
+                href="#mobile-checkout"
+                className="fixed bottom-3 left-3 right-3 z-40 flex items-center justify-between rounded-2xl border border-rose-200 bg-rose-600 px-4 py-3 text-white shadow-2xl lg:hidden"
+              >
+                <span className="flex items-center gap-2 text-sm font-black">
+                  <ShoppingCart className="h-4 w-4" />
+                  {cart.reduce((sum, c) => sum + c.quantity, 0)} items
+                </span>
+                <span className="text-sm font-black">{formatCurrency(getCartTotal())}</span>
+                <span className="rounded-xl bg-white px-3 py-1.5 text-xs font-black text-rose-700">Checkout</span>
+              </a>
             )}
           </div>
         )}
@@ -1908,7 +1922,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                           required
                           value={purchaseOrderForm.supplierId}
                           onChange={(e) => setPurchaseOrderForm({ ...purchaseOrderForm, supplierId: e.target.value })}
-                          className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs"
+                          className="w-full bg-slate-50 border border-slate-200 p-3 sm:p-2 rounded-xl text-sm sm:text-xs"
                         >
                           <option value="">-- Choose Partner --</option>
                           {data.suppliers.map((s: any) => (
@@ -1925,7 +1939,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                           value={purchaseOrderForm.itemName}
                           onChange={(e) => setPurchaseOrderForm({ ...purchaseOrderForm, itemName: e.target.value })}
                           placeholder="e.g. Buffalo Mozzarella" 
-                          className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs"
+                          className="w-full bg-slate-50 border border-slate-200 p-3 sm:p-2 rounded-xl text-sm sm:text-xs"
                         />
                       </div>
 
@@ -1936,7 +1950,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                           required
                           value={purchaseOrderForm.quantity}
                           onChange={(e) => setPurchaseOrderForm({ ...purchaseOrderForm, quantity: e.target.value })}
-                          className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs"
+                          className="w-full bg-slate-50 border border-slate-200 p-3 sm:p-2 rounded-xl text-sm sm:text-xs"
                         />
                       </div>
 
@@ -1947,7 +1961,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                           required
                           value={purchaseOrderForm.cost}
                           onChange={(e) => setPurchaseOrderForm({ ...purchaseOrderForm, cost: e.target.value })}
-                          className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs"
+                          className="w-full bg-slate-50 border border-slate-200 p-3 sm:p-2 rounded-xl text-sm sm:text-xs"
                         />
                       </div>
 
@@ -2060,7 +2074,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                           required
                           value={shiftForm.userId}
                           onChange={(e) => setShiftForm({ ...shiftForm, userId: e.target.value })}
-                          className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs"
+                          className="w-full bg-slate-50 border border-slate-200 p-3 sm:p-2 rounded-xl text-sm sm:text-xs"
                         >
                           <option value="">-- Choose User --</option>
                           {data.users.map((u: any) => (
@@ -2076,7 +2090,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                           required
                           value={shiftForm.date}
                           onChange={(e) => setShiftForm({ ...shiftForm, date: e.target.value })}
-                          className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs"
+                          className="w-full bg-slate-50 border border-slate-200 p-3 sm:p-2 rounded-xl text-sm sm:text-xs"
                         />
                       </div>
 
@@ -2088,7 +2102,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                           value={shiftForm.startTime}
                           onChange={(e) => setShiftForm({ ...shiftForm, startTime: e.target.value })}
                           placeholder="09:00" 
-                          className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs"
+                          className="w-full bg-slate-50 border border-slate-200 p-3 sm:p-2 rounded-xl text-sm sm:text-xs"
                         />
                       </div>
 
@@ -2100,7 +2114,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                           value={shiftForm.endTime}
                           onChange={(e) => setShiftForm({ ...shiftForm, endTime: e.target.value })}
                           placeholder="17:00" 
-                          className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs"
+                          className="w-full bg-slate-50 border border-slate-200 p-3 sm:p-2 rounded-xl text-sm sm:text-xs"
                         />
                       </div>
 
@@ -2109,7 +2123,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                         <select 
                           value={shiftForm.role}
                           onChange={(e) => setShiftForm({ ...shiftForm, role: e.target.value })}
-                          className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs"
+                          className="w-full bg-slate-50 border border-slate-200 p-3 sm:p-2 rounded-xl text-sm sm:text-xs"
                         >
                           <option value="chef">Chef</option>
                           <option value="waiter">Waiter</option>
@@ -2150,7 +2164,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                     }} className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 items-end">
                       <div>
                         <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Role *</label>
-                        <select value={staffForm.role} onChange={(e) => setStaffForm({ ...staffForm, role: e.target.value })} className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs">
+                        <select value={staffForm.role} onChange={(e) => setStaffForm({ ...staffForm, role: e.target.value })} className="w-full bg-slate-50 border border-slate-200 p-3 sm:p-2 rounded-xl text-sm sm:text-xs">
                           <option value="chef">Chef</option>
                           <option value="waiter">Waiter</option>
                           <option value="cashier">Cashier</option>
@@ -2158,30 +2172,30 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                       </div>
                       <div>
                         <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Full Name *</label>
-                        <input value={staffForm.name} onChange={(e) => setStaffForm({ ...staffForm, name: e.target.value })} className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs" placeholder="Staff name" />
+                        <input value={staffForm.name} onChange={(e) => setStaffForm({ ...staffForm, name: e.target.value })} className="w-full bg-slate-50 border border-slate-200 p-3 sm:p-2 rounded-xl text-sm sm:text-xs" placeholder="Staff name" />
                       </div>
                       <div>
                         <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Email *</label>
-                        <input type="email" value={staffForm.email} onChange={(e) => setStaffForm({ ...staffForm, email: e.target.value })} className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs" placeholder="staff@email.com" />
+                        <input type="email" value={staffForm.email} onChange={(e) => setStaffForm({ ...staffForm, email: e.target.value })} className="w-full bg-slate-50 border border-slate-200 p-3 sm:p-2 rounded-xl text-sm sm:text-xs" placeholder="staff@email.com" />
                       </div>
                       <div>
                         <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Password *</label>
-                        <input type="password" value={staffForm.password} onChange={(e) => setStaffForm({ ...staffForm, password: e.target.value })} className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs" placeholder="Temporary password" />
+                        <input type="password" value={staffForm.password} onChange={(e) => setStaffForm({ ...staffForm, password: e.target.value })} className="w-full bg-slate-50 border border-slate-200 p-3 sm:p-2 rounded-xl text-sm sm:text-xs" placeholder="Temporary password" />
                       </div>
                       <div>
                         <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Phone</label>
-                        <input value={staffForm.phone} onChange={(e) => setStaffForm({ ...staffForm, phone: e.target.value })} className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs" placeholder="Phone" />
+                        <input value={staffForm.phone} onChange={(e) => setStaffForm({ ...staffForm, phone: e.target.value })} className="w-full bg-slate-50 border border-slate-200 p-3 sm:p-2 rounded-xl text-sm sm:text-xs" placeholder="Phone" />
                       </div>
                       <div>
                         <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Status</label>
-                        <select value={staffForm.status} onChange={(e) => setStaffForm({ ...staffForm, status: e.target.value })} className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs">
+                        <select value={staffForm.status} onChange={(e) => setStaffForm({ ...staffForm, status: e.target.value })} className="w-full bg-slate-50 border border-slate-200 p-3 sm:p-2 rounded-xl text-sm sm:text-xs">
                           <option value="active">Active</option>
                           <option value="inactive">Inactive</option>
                         </select>
                       </div>
                       <div>
                         <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">{staffForm.role === 'chef' ? 'Specialization' : staffForm.role === 'waiter' ? 'Section' : 'Shift Preference'}</label>
-                        <input value={staffForm.role === 'chef' ? staffForm.specialization : staffForm.role === 'waiter' ? staffForm.section : staffForm.shiftPreference} onChange={(e) => setStaffForm({ ...staffForm, ...(staffForm.role === 'chef' ? { specialization: e.target.value } : staffForm.role === 'waiter' ? { section: e.target.value } : { shiftPreference: e.target.value }) })} className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs" placeholder={staffForm.role === 'chef' ? 'Pizza / Grill' : staffForm.role === 'waiter' ? 'Floor 1' : 'Morning / Evening'} />
+                        <input value={staffForm.role === 'chef' ? staffForm.specialization : staffForm.role === 'waiter' ? staffForm.section : staffForm.shiftPreference} onChange={(e) => setStaffForm({ ...staffForm, ...(staffForm.role === 'chef' ? { specialization: e.target.value } : staffForm.role === 'waiter' ? { section: e.target.value } : { shiftPreference: e.target.value }) })} className="w-full bg-slate-50 border border-slate-200 p-3 sm:p-2 rounded-xl text-sm sm:text-xs" placeholder={staffForm.role === 'chef' ? 'Pizza / Grill' : staffForm.role === 'waiter' ? 'Floor 1' : 'Morning / Evening'} />
                       </div>
                       <div>
                         <button type="submit" className="w-full py-2 bg-slate-900 text-white font-extrabold rounded-xl text-xs hover:bg-black transition-all">Create Staff Profile</button>
@@ -2411,7 +2425,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                           value={expenseForm.description}
                           onChange={(e) => setExpenseForm({ ...expenseForm, description: e.target.value })}
                           placeholder="e.g. Electric bill April" 
-                          className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs"
+                          className="w-full bg-slate-50 border border-slate-200 p-3 sm:p-2 rounded-xl text-sm sm:text-xs"
                         />
                       </div>
 
@@ -2420,7 +2434,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                         <select 
                           value={expenseForm.category}
                           onChange={(e) => setExpenseForm({ ...expenseForm, category: e.target.value })}
-                          className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs"
+                          className="w-full bg-slate-50 border border-slate-200 p-3 sm:p-2 rounded-xl text-sm sm:text-xs"
                         >
                           <option value="Ingredients">Ingredients</option>
                           <option value="Rent">Rent</option>
@@ -2438,7 +2452,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                           value={expenseForm.amount}
                           onChange={(e) => setExpenseForm({ ...expenseForm, amount: e.target.value })}
                           placeholder="350" 
-                          className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs"
+                          className="w-full bg-slate-50 border border-slate-200 p-3 sm:p-2 rounded-xl text-sm sm:text-xs"
                         />
                       </div>
 
@@ -2449,7 +2463,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                           required
                           value={expenseForm.date}
                           onChange={(e) => setExpenseForm({ ...expenseForm, date: e.target.value })}
-                          className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs"
+                          className="w-full bg-slate-50 border border-slate-200 p-3 sm:p-2 rounded-xl text-sm sm:text-xs"
                         />
                       </div>
 
@@ -2549,7 +2563,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                         <select 
                           value={couponForm.discountType}
                           onChange={(e) => setCouponForm({ ...couponForm, discountType: e.target.value })}
-                          className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs"
+                          className="w-full bg-slate-50 border border-slate-200 p-3 sm:p-2 rounded-xl text-sm sm:text-xs"
                         >
                           <option value="percentage">Percentage (%)</option>
                           <option value="fixed">Fixed Cash (₹)</option>
@@ -2564,7 +2578,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                           value={couponForm.discountValue}
                           onChange={(e) => setCouponForm({ ...couponForm, discountValue: e.target.value })}
                           placeholder="10" 
-                          className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs"
+                          className="w-full bg-slate-50 border border-slate-200 p-3 sm:p-2 rounded-xl text-sm sm:text-xs"
                         />
                       </div>
 
@@ -2575,7 +2589,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                           required
                           value={couponForm.minOrderAmount}
                           onChange={(e) => setCouponForm({ ...couponForm, minOrderAmount: e.target.value })}
-                          className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs"
+                          className="w-full bg-slate-50 border border-slate-200 p-3 sm:p-2 rounded-xl text-sm sm:text-xs"
                         />
                       </div>
 
@@ -2586,7 +2600,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                           required
                           value={couponForm.expiryDate}
                           onChange={(e) => setCouponForm({ ...couponForm, expiryDate: e.target.value })}
-                          className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs"
+                          className="w-full bg-slate-50 border border-slate-200 p-3 sm:p-2 rounded-xl text-sm sm:text-xs"
                         />
                       </div>
 
@@ -3395,3 +3409,5 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
     </div>
   );
 }
+
+
