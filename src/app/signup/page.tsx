@@ -46,7 +46,7 @@ export default function SignupPage() {
     <div className="min-h-screen bg-linear-to-br from-slate-950 via-slate-900 to-slate-800 px-4 py-12 text-white">
       <div className="mx-auto flex max-w-5xl flex-col gap-8 rounded-3xl border border-white/10 bg-white/10 p-8 shadow-2xl backdrop-blur-xl lg:flex-row lg:items-center">
         <div className="flex-1">
-          <p className="text-sm uppercase tracking-[0.3em] text-rose-300">CulinaryOS</p>
+          <p className="text-sm uppercase tracking-[0.3em] text-rose-300">FirstBite</p>
           <h1 className="mt-3 text-4xl font-semibold sm:text-5xl">Create your account.</h1>
           <p className="mt-4 text-lg text-slate-300">Join the restaurant management experience with secure access and email verification.</p>
         </div>
@@ -125,3 +125,4 @@ export default function SignupPage() {
     </div>
   );
 }
+

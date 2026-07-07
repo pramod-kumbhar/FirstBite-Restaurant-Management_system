@@ -326,7 +326,7 @@ export async function POST(request: NextRequest) {
 
           await sendEmail({
             to: resolvedCustomerEmail,
-            subject: `✅ Table reservation ${normalizedStatus === 'confirmed' ? 'confirmed' : 'received'} — CulinaryOS`,
+            subject: `✅ Table reservation ${normalizedStatus === 'confirmed' ? 'confirmed' : 'received'} — FirstBite`,
             html: reservationConfirmationHtml({
               name: String(resolvedCustomerName),
               tableNumber: tableInfo?.tableNumber,
@@ -473,7 +473,7 @@ export async function POST(request: NextRequest) {
 
               await sendEmail({
                 to: resolvedCustomerEmail,
-                subject: `✅ Order #${orderId} Confirmed — CulinaryOS`,
+                subject: `✅ Order #${orderId} Confirmed — FirstBite`,
                 html: orderConfirmationHtml({
                   name: resolvedCustomerName,
                   orderId,
@@ -533,7 +533,7 @@ export async function POST(request: NextRequest) {
           if (customer && isCustomerRole(customer.role) && customer.email) {
             await sendEmail({
               to: customer.email,
-              subject: `🍽 Order #${id} is ready — CulinaryOS`,
+              subject: `🍽 Order #${id} is ready — FirstBite`,
               html: orderReadyHtml({ name: customer.name, orderId: id, tableNumber: tableInfo?.tableNumber }),
             });
           }
@@ -649,7 +649,7 @@ export async function POST(request: NextRequest) {
           const loginUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/staff-login`;
           await sendEmail({
             to: email,
-            subject: `Welcome to CulinaryOS as ${normalizedRole}`,
+            subject: `Welcome to FirstBite as ${normalizedRole}`,
             html: staffWelcomeEmailHtml({
               name,
               role: normalizedRole,
@@ -984,4 +984,5 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
+
 

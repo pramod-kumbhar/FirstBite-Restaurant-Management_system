@@ -10,7 +10,7 @@ export default function WelcomePage() {
     <div className="min-h-screen bg-slate-950 px-4 py-12 text-white" style={{ backgroundImage: 'radial-gradient(circle at top, rgba(248,113,113,0.2), transparent 45%), linear-gradient(135deg, #111827 0%, #1f2937 100%)' }}>
       <div className="mx-auto flex max-w-5xl flex-col gap-8 rounded-3xl border border-white/10 bg-white/10 p-8 shadow-2xl backdrop-blur-xl">
         <div className="max-w-2xl">
-          <p className="text-sm uppercase tracking-[0.3em] text-rose-300">CulinaryOS</p>
+          <p className="text-sm uppercase tracking-[0.3em] text-rose-300">FirstBite</p>
           <h1 className="mt-3 text-4xl font-semibold sm:text-5xl">Choose your access path</h1>
           <p className="mt-4 text-lg text-slate-300">Select whether you are a customer or part of the restaurant staff to enter the correct workspace.</p>
         </div>
@@ -52,3 +52,4 @@ export default function WelcomePage() {
     </div>
   );
 }
+

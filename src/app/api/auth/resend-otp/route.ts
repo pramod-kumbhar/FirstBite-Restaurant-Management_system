@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
 
     const emailResult = await sendEmail({
       to: user.email,
-      subject: 'Your OTP code for CulinaryOS verification',
+      subject: 'Your OTP code for FirstBite verification',
       html: verifyEmailHtml(user.name, verificationCode),
     });
 
@@ -46,3 +46,4 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: error.message || 'Unable to resend OTP.' }, { status: 500 });
   }
 }
+

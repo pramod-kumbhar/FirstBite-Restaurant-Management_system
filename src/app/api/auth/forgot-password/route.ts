@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     try {
       await sendEmail({
         to: user.email,
-        subject: 'Reset your CulinaryOS password',
+        subject: 'Reset your FirstBite password',
         html: passwordResetHtml(user.name || 'there', resetUrl),
       });
     } catch (emailError) {
@@ -51,3 +51,4 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: error.message || 'Unable to process password reset right now.' }, { status: 500 });
   }
 }
+

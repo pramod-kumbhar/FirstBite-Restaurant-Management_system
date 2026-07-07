@@ -94,13 +94,13 @@ export async function POST(request: NextRequest) {
     try {
       const verificationEmailResult = await sendEmail({
         to: normalizedEmail,
-        subject: 'Verify your CulinaryOS account',
+        subject: 'Verify your FirstBite account',
         html: verifyEmailHtml(normalizedName, verificationCode),
       });
 
       const welcomeEmailResult = await sendEmail({
         to: normalizedEmail,
-        subject: '🍽 Welcome to CulinaryOS!',
+        subject: '🍽 Welcome to FirstBite!',
         html: welcomeEmailHtml(normalizedName),
       });
 
@@ -131,3 +131,4 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: error.message || 'Unable to create account right now.' }, { status: 500 });
   }
 }
+
