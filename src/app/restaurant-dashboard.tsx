@@ -365,6 +365,15 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
     return subtotal - discount + gst;
   };
 
+  const getDeliveryUpiPaymentUri = () => {
+    const amount = getCartTotal().toFixed(2);
+    return `upi://pay?pa=pamms.k07@upi&pn=FirstBite&am=${amount}&cu=INR&tn=${encodeURIComponent('FirstBite delivery order')}`;
+  };
+
+  const getDeliveryUpiQrUrl = () => {
+    return `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(getDeliveryUpiPaymentUri())}`;
+  };
+
   const applyCouponToCart = () => {
     if (!cartCoupon) {
       showToast("Please enter a coupon code", "info");
@@ -1431,6 +1440,31 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                                 ))}
                               </div>
                               <p className="mt-2 text-[10px] text-slate-500">Delivery orders require your full address and chosen payment method.</p>
+                              {customerPaymentMethod === 'upi' && (
+                                <div className="mt-3 grid grid-cols-[96px_1fr] gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-3">
+                                  <div className="flex h-24 w-24 items-center justify-center rounded-xl border border-emerald-200 bg-white p-1.5">
+                                    <img
+                                      src={getDeliveryUpiQrUrl()}
+                                      alt="UPI payment QR code"
+                                      className="h-full w-full object-contain"
+                                    />
+                                  </div>
+                                  <div className="min-w-0">
+                                    <div className="flex items-center gap-1.5 text-emerald-800">
+                                      <Smartphone className="h-3.5 w-3.5" />
+                                      <p className="text-[10px] font-extrabold uppercase tracking-[0.18em]">UPI Scan</p>
+                                    </div>
+                                    <p className="mt-1 text-lg font-black text-slate-950">₹{getCartTotal().toFixed(2)}</p>
+                                    <p className="mt-1 truncate text-[11px] font-semibold text-slate-700">pamms.k07@upi</p>
+                                    <a
+                                      href={getDeliveryUpiPaymentUri()}
+                                      className="mt-2 inline-flex items-center gap-1 rounded-xl bg-emerald-700 px-3 py-1.5 text-[11px] font-bold text-white transition hover:bg-emerald-800"
+                                    >
+                                      Open UPI App
+                                    </a>
+                                  </div>
+                                </div>
+                              )}
                             </div>
 
                             <div className="mt-4 rounded-3xl border border-slate-200 bg-slate-50 p-4">
