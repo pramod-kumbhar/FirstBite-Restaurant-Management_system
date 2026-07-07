@@ -351,6 +351,11 @@ export async function POST(request: NextRequest) {
 
     // 6. PLACE ORDER (CUSTOMER OR WAITER OR CASHIER)
     if (action === 'placeOrder') {
+      const seeded = await isDatabaseSeeded();
+      if (!seeded) {
+        await seedDatabase();
+      }
+
       const { customerId, customerEmail, customerName, tableId, orderType, address, items, notes, couponCode, discountAmount, totalAmount, finalAmount, gstAmount } = payload;
       const normalizedItems = Array.isArray(items) ? items : [];
 

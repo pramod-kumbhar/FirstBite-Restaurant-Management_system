@@ -1,4 +1,4 @@
-import { db } from './index';
+import { client, db } from './index';
 import { 
   users, categories, menuItems, restaurantTables, reservations, 
   orders, orderItems, suppliers, inventoryItems, purchaseOrders, 
@@ -41,6 +41,7 @@ export async function seedDatabase() {
   await db.delete(users);
   await db.delete(coupons);
   await db.delete(expenses);
+  client.prepare('DELETE FROM sqlite_sequence').run();
 
   // 2. Create the default manager account.
   await db.insert(users).values({
