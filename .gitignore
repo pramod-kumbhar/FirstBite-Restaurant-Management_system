@@ -15,3 +15,4 @@ tsconfig.tsbuildinfo
 /.idea/
 coverage/
 *.log
+.vercel
