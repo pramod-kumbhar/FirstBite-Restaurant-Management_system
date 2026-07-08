@@ -48,6 +48,8 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
   // Navigation tabs inside roles
   const [activeManagerTab, setActiveManagerTab] = useState<'overview' | 'menu' | 'inventory' | 'shifts' | 'reservations' | 'expenses' | 'coupons'>('overview');
   const [activeCustomerTab, setActiveCustomerTab] = useState<'browse' | 'reservations' | 'loyalty' | 'orders' | 'reviews'>('browse');
+  const [customerMode, setCustomerMode] = useState<'online' | 'dine-in' | null>(null);
+  const [isCartOpen, setIsCartOpen] = useState(false);
 
   // Customer State
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
@@ -539,6 +541,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
       setCustomerPincode('');
       setCustomerPaymentMethod('card');
       setActiveCustomerTab('orders');
+      setIsCartOpen(false);
       showToast("Order placed successfully! Check progress in tracker.", "success");
     }
   };
@@ -562,35 +565,67 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
   const lowStockItems = data.inventory.filter((item: any) => Number(item.quantity) <= Number(item.reorderLevel));
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-white/80 text-slate-900 selection:bg-slate-900/10 selection:text-slate-900 font-sans flex flex-col" style={{ backgroundImage: 'radial-gradient(circle at top, rgba(255,255,255,0.85), transparent 40%), linear-gradient(180deg, rgba(255,255,255,0.9), rgba(248,250,252,0.95))' }}>
+    <div 
+      className="min-h-screen overflow-x-hidden bg-slate-950 text-white selection:bg-rose-500/20 selection:text-white font-sans flex flex-col relative" 
+      style={{ 
+        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.95)), url('/firstbite_restaurant_interior.jpg')`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundAttachment: 'fixed'
+      }}
+    >
       
       {/* 1. TOP HEADER WITH ROLE SELECTOR */}
-      <header className="sticky top-0 z-40 mx-2 mt-2 rounded-2xl px-3 py-3 sm:mx-3 sm:mt-3 sm:rounded-3xl sm:px-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between border border-white/10 bg-white/90 shadow-sm backdrop-blur-3xl">
-        <div className="flex items-center justify-between gap-3 w-full lg:w-auto">
-          <div className="bg-rose-600 text-white p-2.5 rounded-2xl shadow-md flex items-center justify-center">
-            <Utensils className="h-6 w-6" />
+      <header className="sticky top-0 z-40 mx-1.5 mt-1.5 rounded-2xl px-3 py-2 sm:mx-3 sm:mt-3 sm:rounded-3xl sm:px-4 flex flex-wrap gap-2.5 items-center justify-between border border-white/10 bg-slate-950/75 shadow-xl backdrop-blur-xl text-white">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="bg-rose-500 text-white p-2 rounded-xl shadow-lg flex items-center justify-center shadow-rose-500/10 shrink-0">
+            <Utensils className="h-5 w-5" />
           </div>
           <div>
-            <h1 className="text-lg sm:text-xl font-bold tracking-tight flex flex-wrap items-center gap-2 text-slate-900">
-              FirstBite <span className="text-xs bg-rose-100 text-rose-700 font-semibold px-2 py-0.5 rounded-full">v2.1 PRO</span>
+            <h1 className="text-base sm:text-lg font-extrabold tracking-tight flex flex-wrap items-center gap-1.5 text-white">
+              FirstBite <span className="text-[10px] bg-rose-500/25 text-rose-300 font-semibold px-2 py-0.5 rounded-full border border-rose-500/20">PRO</span>
             </h1>
-            <p className="text-[11px] sm:text-xs text-slate-500">Modern restaurant ordering, reservations, and operations</p>
+            <p className="text-[10px] sm:text-xs text-slate-350 hidden sm:block">Modern restaurant ordering & reservations</p>
           </div>
         </div>
 
         {/* ROLE SWITCHER */}
         {currentUser?.role === 'customer' ? (
-          <div className="flex flex-col gap-1 w-full lg:w-auto">
-            <p className="text-sm font-bold text-slate-900">Welcome back, {currentUser?.name?.split(' ')[0] || 'Guest'}!</p>
-            <p className="text-xs text-slate-500">Ready to order? Browse menu, book a table, or track your delivery.</p>
+          <div className="flex flex-col gap-0.5">
+            <div className="flex flex-wrap items-center gap-1.5 text-xs sm:text-sm">
+              <p className="font-bold text-white">Welcome back, {currentUser?.name?.split(' ')[0] || 'Guest'}!</p>
+              {customerMode && (
+                <span className="text-[9px] font-bold uppercase tracking-wider bg-rose-500/20 text-rose-300 px-2 py-0.5 rounded-full select-none border border-rose-500/15">
+                  {customerMode === 'online' ? 'Delivery' : 'Dine-In'}
+                </span>
+              )}
+              {customerMode && (
+                <button 
+                  onClick={() => {
+                    setCustomerMode(null);
+                    setActiveCustomerTab('browse');
+                  }}
+                  className="text-[9px] font-bold text-slate-400 hover:text-rose-450 transition underline decoration-dotted"
+                >
+                  Change Mode
+                </button>
+              )}
+            </div>
+            <p className="text-[11px] text-slate-400 hidden md:block">
+              {customerMode === 'online' 
+                ? 'Ready to order? Browse menu and track your delivery.' 
+                : customerMode === 'dine-in'
+                  ? 'Ready to dine? Book a table or browse table ordering.'
+                  : 'Ready to order? Please select your dining preference.'}
+            </p>
           </div>
         ) : (
-          <div className="bg-slate-100 p-1 rounded-xl flex flex-nowrap sm:flex-wrap items-center gap-1 border border-slate-200 w-full lg:w-auto overflow-x-auto">
-            <span className="text-xs font-bold text-slate-500 px-3 hidden lg:inline uppercase tracking-wider">Access Panel:</span>
+          <div className="bg-slate-900/60 p-1 rounded-xl flex flex-nowrap sm:flex-wrap items-center gap-1 border border-white/5 w-full lg:w-auto overflow-x-auto">
+            <span className="text-xs font-bold text-slate-400 px-3 hidden lg:inline uppercase tracking-wider">Access Panel:</span>
             {availableRoles.includes('customer') && (
               <button 
                 onClick={() => { setCurrentRole('customer'); }}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${currentRole === 'customer' ? 'bg-white text-rose-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${currentRole === 'customer' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/25 shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}
               >
                 <Users className="h-3.5 w-3.5" /> Customer
               </button>
@@ -598,7 +633,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
             {availableRoles.includes('manager') && (
               <button 
                 onClick={() => { setCurrentRole('manager'); }}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${currentRole === 'manager' ? 'bg-white text-rose-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${currentRole === 'manager' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/25 shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}
               >
                 <PieChart className="h-3.5 w-3.5" /> Manager
               </button>
@@ -606,7 +641,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
             {availableRoles.includes('chef') && (
               <button 
                 onClick={() => { setCurrentRole('chef'); }}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${currentRole === 'chef' ? 'bg-white text-rose-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${currentRole === 'chef' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/25 shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}
               >
                 <Flame className="h-3.5 w-3.5 animate-pulse" /> Chef
               </button>
@@ -614,7 +649,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
             {availableRoles.includes('waiter') && (
               <button 
                 onClick={() => { setCurrentRole('waiter'); }}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${currentRole === 'waiter' ? 'bg-white text-rose-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${currentRole === 'waiter' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/25 shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}
               >
                 <UserCheck className="h-3.5 w-3.5" /> Waiter
               </button>
@@ -622,7 +657,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
             {availableRoles.includes('cashier') && (
               <button 
                 onClick={() => { setCurrentRole('cashier'); }}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${currentRole === 'cashier' ? 'bg-white text-rose-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${currentRole === 'cashier' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/25 shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}
               >
                 <Receipt className="h-3.5 w-3.5" /> Cashier
               </button>
@@ -631,70 +666,99 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
         )}
 
         {/* USER INFO & LOGOUT */}
-        <div className="flex items-center gap-2 w-full lg:w-auto justify-between sm:justify-end flex-wrap">
-          <button 
-            onClick={() => handleAction('seed')} 
-            disabled={submitting}
-            title="Reset DB and Seed Beautiful Demo Data"
-            className="hidden sm:flex p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border-slate-300 transition-all rounded-xl border items-center gap-1 text-xs font-medium"
-          >
-            <RotateCcw className={`h-4 w-4 ${submitting ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">Reset System</span>
-          </button>
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setProfileOpen((prev) => !prev)}
-              className="flex items-center gap-2 sm:gap-3 rounded-2xl border border-slate-200 bg-white/90 px-2.5 sm:px-3 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
+        <div className="flex items-center gap-2">
+          {currentRole !== 'customer' && (
+            <button 
+              onClick={() => handleAction('seed')} 
+              disabled={submitting}
+              title="Reset DB and Seed Beautiful Demo Data"
+              className="hidden sm:flex p-2 text-slate-305 hover:text-white hover:bg-slate-900/60 border-white/10 transition-all rounded-xl border items-center gap-1 text-xs font-medium bg-slate-950/40 h-[38px]"
             >
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-rose-500 text-white">{(currentUser?.name || 'C').charAt(0)}</div>
-              <div className="hidden min-w-0 text-left leading-tight sm:block">
-                <div className="text-sm font-semibold">{currentUser?.name || 'Guest'}</div>
-                <div className="text-[10px] uppercase tracking-[0.2em] text-slate-500">{currentUser?.role || 'customer'}</div>
-              </div>
+              <RotateCcw className={`h-4 w-4 ${submitting ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">Reset System</span>
             </button>
-            {profileOpen ? (
-              <div className="fixed left-3 right-3 top-24 z-50 rounded-3xl border border-slate-200 bg-white p-4 shadow-2xl sm:absolute sm:left-auto sm:right-0 sm:top-full sm:mt-3 sm:w-72">
-                <div className="flex items-center justify-between gap-2 mb-3">
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.24em] text-rose-500">Your profile</p>
-                    <p className="text-sm font-bold text-slate-900">{currentUser?.name || 'Guest User'}</p>
-                  </div>
-                  <span className={`text-[10px] rounded-full px-2 py-1 font-semibold ${currentUser?.isEmailVerified ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
-                    {currentUser?.isEmailVerified ? 'Verified' : 'Verify OTP'}
+          )}
+
+          {/* Combined Cart & Profile Button Layout */}
+          <div className="flex items-center gap-2">
+            {currentRole === 'customer' && (
+              <button 
+                onClick={() => {
+                  setActiveCustomerTab('browse');
+                  setIsCartOpen(prev => !prev);
+                }}
+                className="relative flex items-center gap-1.5 bg-rose-500 hover:bg-rose-600 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition shadow-lg shadow-rose-500/25 h-[38px]"
+              >
+                <ShoppingCart className="h-4 w-4" />
+                <span className="hidden sm:inline">My Cart</span>
+                {cart.reduce((sum, c) => sum + c.quantity, 0) > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 bg-white text-rose-600 border border-rose-500 text-[10px] font-black h-5 w-5 rounded-full flex items-center justify-center shadow-md animate-bounce">
+                    {cart.reduce((sum, c) => sum + c.quantity, 0)}
                   </span>
+                )}
+              </button>
+            )}
+
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setProfileOpen((prev) => !prev)}
+                className="flex items-center gap-2 sm:gap-3 rounded-xl sm:rounded-2xl border border-white/10 bg-slate-900/60 px-2 sm:px-3 py-1.5 sm:py-2 text-sm font-semibold text-white transition hover:bg-slate-800 h-[38px]"
+              >
+                <div className="flex h-6 w-6 sm:h-7 sm:w-7 shrink-0 items-center justify-center rounded-lg sm:rounded-xl bg-rose-500 text-white font-bold text-xs sm:text-sm">{(currentUser?.name || 'C').charAt(0)}</div>
+                <div className="hidden min-w-0 text-left leading-tight sm:block">
+                  <div className="text-xs sm:text-sm font-semibold">{currentUser?.name || 'Guest'}</div>
+                  <div className="text-[9px] uppercase tracking-[0.2em] text-slate-400 font-medium">{currentUser?.role || 'customer'}</div>
                 </div>
-                <div className="space-y-2 text-[13px] text-slate-600">
-                  <div className="flex justify-between gap-3"><span>Email</span><span className="truncate font-semibold text-slate-900">{currentUser?.email || 'Not set'}</span></div>
-                  <div className="flex justify-between"><span>Phone</span><span className="font-semibold text-slate-900">{currentUser?.phone || 'Not set'}</span></div>
-                  <div className="flex justify-between"><span>Loyalty</span><span className="font-semibold text-slate-900">{currentUser?.loyaltyPoints ?? 0} pts</span></div>
-                  <div className="flex justify-between"><span>Orders</span><span className="font-semibold text-slate-900">{customerOrders.length}</span></div>
-                  <div className="flex justify-between"><span>Current status</span><span className="font-semibold text-slate-900">{latestCustomerOrder?.status?.toUpperCase() || 'No active order'}</span></div>
+              </button>
+              {profileOpen ? (
+                <div className="fixed left-3 right-3 top-24 z-50 rounded-3xl border border-white/10 bg-slate-950/95 backdrop-blur-2xl p-4 shadow-2xl sm:absolute sm:left-auto sm:right-0 sm:top-full sm:mt-3 sm:w-72 text-slate-300">
+                  <div className="flex items-center justify-between gap-2 mb-3">
+                    <div>
+                      <p className="text-[10px] uppercase tracking-[0.24em] text-rose-450 font-bold">Your profile</p>
+                      <p className="text-sm font-bold text-white">{currentUser?.name || 'Guest User'}</p>
+                    </div>
+                    <span className={`text-[10px] rounded-full px-2 py-1 font-semibold ${currentUser?.isEmailVerified ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'}`}>
+                      {currentUser?.isEmailVerified ? 'Verified' : 'Verify OTP'}
+                    </span>
+                  </div>
+                  <div className="space-y-2 text-[13px] text-slate-300">
+                    <div className="flex justify-between gap-3 border-b border-white/5 pb-1"><span>Email</span><span className="truncate font-semibold text-white">{currentUser?.email || 'Not set'}</span></div>
+                    <div className="flex justify-between border-b border-white/5 pb-1"><span>Phone</span><span className="font-semibold text-white">{currentUser?.phone || 'Not set'}</span></div>
+                    <div className="flex justify-between border-b border-white/5 pb-1"><span>Loyalty</span><span className="font-semibold text-white">{currentUser?.loyaltyPoints ?? 0} pts</span></div>
+                    <div className="flex justify-between border-b border-white/5 pb-1"><span>Orders</span><span className="font-semibold text-white">{customerOrders.length}</span></div>
+                    <div className="flex justify-between"><span>Current status</span><span className="font-semibold text-white">{latestCustomerOrder?.status?.toUpperCase() || 'No active order'}</span></div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => { setProfileOpen(false); router.push('/account-settings'); }}
+                    className="mt-4 w-full rounded-2xl bg-white text-slate-950 py-2 text-xs font-bold hover:bg-slate-100 transition"
+                  >
+                    Account settings
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDeleteAccount}
+                    className="mt-3 w-full rounded-2xl bg-rose-600/20 text-rose-300 border border-rose-500/25 py-2 text-xs font-bold hover:bg-rose-600/30 transition mb-3"
+                  >
+                    Delete account permanently
+                  </button>
+                  <div className="border-t border-white/10 pt-3 mt-1">
+                    <button
+                      onClick={() => {
+                        setProfileOpen(false);
+                        handleLogout();
+                      }}
+                      className="w-full rounded-2xl bg-rose-600 hover:bg-rose-700 text-white py-2.5 text-xs font-bold transition flex items-center justify-center gap-2"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      <span>Logout</span>
+                    </button>
+                  </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => { setProfileOpen(false); router.push('/account-settings'); }}
-                  className="mt-4 w-full rounded-2xl bg-slate-950 text-white py-2 text-xs font-bold hover:bg-slate-800 transition"
-                >
-                  Account settings
-                </button>
-                <button
-                  type="button"
-                  onClick={handleDeleteAccount}
-                  className="mt-3 w-full rounded-2xl bg-rose-500 text-white py-2 text-xs font-bold hover:bg-rose-600 transition"
-                >
-                  Delete account permanently
-                </button>
-              </div>
-            ) : null}
+              ) : null}
+            </div>
           </div>
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
-          >
-            <LogOut className="h-4 w-4" />
-            <span>Logout</span>
-          </button>
         </div>
       </header>
 
@@ -719,51 +783,116 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
         {/* ======================================================= */}
         {/* ROLE A: CUSTOMER DASHBOARD                              */}
         {/* ======================================================= */}
-        {currentRole === 'customer' && (
+        {currentRole === 'customer' && customerMode === null && (
+          <div 
+            className="flex-1 flex items-center justify-center p-3 sm:p-6 min-h-[75vh] w-full relative overflow-hidden"
+            style={{
+              backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.65)), url('/firstbite_restaurant_interior.jpg')`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center'
+            }}
+          >
+            <div className="absolute inset-0 bg-slate-950/20 backdrop-blur-xs"></div>
+            
+            <div className="max-w-2xl w-full relative z-10 flex flex-col items-center">
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-white mb-2 drop-shadow-lg text-center">Welcome to FirstBite</h2>
+              <p className="text-slate-200 text-xs sm:text-sm max-w-sm leading-relaxed mb-6 text-center drop-shadow-md">
+                How would you like to experience your meal today? Choose an option below to enter your workspace.
+              </p>
+
+              <div className="w-full bg-slate-950/65 backdrop-blur-xl border border-white/10 rounded-3xl p-5 sm:p-8 shadow-2xl">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 justify-items-center">
+                  {/* Option 1: Order Online */}
+                  <div 
+                    onClick={() => {
+                      setCustomerMode('online');
+                      setCustomerOrderType('delivery');
+                      setCustomerPaymentMethod('card');
+                    }}
+                    className="group cursor-pointer rounded-2xl border border-white/10 p-5 flex flex-col items-center text-center justify-center min-h-[210px] sm:min-h-[230px] w-full max-w-[210px] sm:max-w-[230px] hover:border-rose-500/50 hover:bg-white/5 hover:shadow-2xl hover:shadow-rose-500/10 hover:-translate-y-1 transition-all duration-300 bg-slate-900/40 text-white"
+                  >
+                    <div className="h-12 w-12 sm:h-14 sm:w-14 bg-rose-500/15 rounded-full flex items-center justify-center text-rose-400 group-hover:bg-rose-500 group-hover:text-white transition duration-300 shadow-md shrink-0 mb-3">
+                      <ShoppingBag className="h-5 w-5 sm:h-6 sm:w-6" />
+                    </div>
+                    <div>
+                      <h3 className="text-base sm:text-lg font-bold text-white group-hover:text-rose-300 transition-colors">Order Online</h3>
+                      <p className="text-[10px] sm:text-xs text-slate-350 mt-1 leading-relaxed opacity-85">
+                        Browse our gourmet menu and place delivery or takeaway orders.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Option 2: Dine-In / Offline Reservations */}
+                  <div 
+                    onClick={() => {
+                      setCustomerMode('dine-in');
+                      setCustomerOrderType('dine-in');
+                    }}
+                    className="group cursor-pointer rounded-2xl border border-white/10 p-5 flex flex-col items-center text-center justify-center min-h-[210px] sm:min-h-[230px] w-full max-w-[210px] sm:max-w-[230px] hover:border-rose-500/50 hover:bg-white/5 hover:shadow-2xl hover:shadow-rose-500/10 hover:-translate-y-1 transition-all duration-300 bg-slate-900/40 text-white"
+                  >
+                    <div className="h-12 w-12 sm:h-14 sm:w-14 bg-rose-500/15 rounded-full flex items-center justify-center text-rose-400 group-hover:bg-rose-500 group-hover:text-white transition duration-300 shadow-md shrink-0 mb-3">
+                      <Utensils className="h-5 w-5 sm:h-6 sm:w-6" />
+                    </div>
+                    <div>
+                      <h3 className="text-base sm:text-lg font-bold text-white group-hover:text-rose-300 transition-colors">Dine-In & Bookings</h3>
+                      <p className="text-[10px] sm:text-xs text-slate-350 mt-1 leading-relaxed opacity-85">
+                        Reserve a table in advance or order directly to your dining table.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {currentRole === 'customer' && customerMode !== null && (
           <div className="flex-1 flex flex-col lg:flex-row gap-4 lg:gap-6 p-3 sm:p-4 md:p-6 pb-28 lg:pb-6 max-w-7xl mx-auto w-full">
             
             {/* Customer Navigation and Main Body */}
             <div className="flex-1 flex flex-col">
               
               {/* Promo Banner */}
-              <div className="bg-linear-to-r from-rose-600 to-orange-500 rounded-3xl p-4 sm:p-6 text-white mb-4 sm:mb-6 relative overflow-hidden shadow-lg">
+              <div className="bg-slate-950/65 backdrop-blur-md border border-white/10 rounded-3xl p-4 sm:p-6 text-white mb-4 sm:mb-6 relative overflow-hidden shadow-xl">
                 <div className="relative z-10 max-w-lg">
-                  <span className="bg-white/20 text-white text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded-full backdrop-blur-md">Loyalty Club Reward</span>
-                  <h2 className="text-xl sm:text-2xl md:text-3xl font-black mt-3 leading-tight">Order Gourmet Food Straight to Your Table!</h2>
-                  <p className="text-white/90 text-sm mt-2 font-medium">Use QR table codes, browse real-time preparation levels, pay instantly and rack up points.</p>
+                  <span className="bg-rose-500/20 text-rose-350 border border-rose-500/20 text-[10px] uppercase font-extrabold tracking-wider px-2.5 py-1 rounded-full select-none">Loyalty Club Reward</span>
+                  <h2 className="text-xl sm:text-2xl md:text-3xl font-black mt-3 leading-tight text-white">Order Gourmet Food Straight to Your Table!</h2>
+                  <p className="text-slate-300 text-sm mt-2 font-medium opacity-90">Use QR table codes, browse real-time preparation levels, pay instantly and rack up points.</p>
                   <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-4">
-                    <span className="bg-white text-rose-700 px-3 py-1 rounded-xl text-xs font-bold">Code: WELCOME10 (10% OFF)</span>
-                    <span className="text-xs text-white/95 font-semibold">★ Current Loyalty Points: 340</span>
+                    <span className="bg-rose-500 text-white px-3 py-1 rounded-xl text-xs font-bold">Code: WELCOME10 (10% OFF)</span>
+                    <span className="text-xs text-slate-300 font-semibold">★ Current Loyalty Points: 340</span>
                   </div>
                 </div>
-                <div className="absolute right-0 bottom-0 top-0 opacity-15 pointer-events-none flex items-center justify-center">
+                <div className="absolute right-0 bottom-0 top-0 opacity-10 pointer-events-none flex items-center justify-center">
                   <Utensils className="w-52 h-52 rotate-12" />
                 </div>
               </div>
 
-              <div className="mb-6 rounded-3xl bg-white/20 border border-white/10 shadow-sm">
-                <div className="flex flex-nowrap items-center gap-2 sm:gap-3 overflow-x-auto whitespace-nowrap px-3 sm:px-4 py-3 text-sm text-slate-600">
+              <div className="mb-6 rounded-3xl bg-slate-900/55 border border-white/10 backdrop-blur-md shadow-lg">
+                <div className="flex flex-nowrap items-center gap-2 sm:gap-3 overflow-x-auto whitespace-nowrap px-3 sm:px-4 py-3 text-sm text-slate-300">
                   <button 
                     onClick={() => setActiveCustomerTab('browse')}
-                    className={`min-w-fit rounded-full px-3 sm:px-4 py-2.5 font-semibold transition ${activeCustomerTab === 'browse' ? 'bg-white text-rose-600 shadow-sm' : 'bg-white/10 text-slate-600 hover:bg-white/30'}`}
+                    className={`min-w-fit rounded-full px-3 sm:px-4 py-2.5 font-semibold transition ${activeCustomerTab === 'browse' ? 'bg-rose-500 text-white shadow-md shadow-rose-500/25' : 'bg-slate-950/40 text-slate-400 border border-white/5 hover:bg-slate-800 hover:text-white'}`}
                   >
                     🍔 Digital Menu
                   </button>
-                  <button 
-                    onClick={() => setActiveCustomerTab('reservations')}
-                    className={`min-w-fit rounded-full px-3 sm:px-4 py-2.5 font-semibold transition ${activeCustomerTab === 'reservations' ? 'bg-white text-rose-600 shadow-sm' : 'bg-white/10 text-slate-600 hover:bg-white/30'}`}
-                  >
-                    📅 Table Reservations
-                  </button>
+                  {customerMode === 'dine-in' && (
+                    <button 
+                      onClick={() => setActiveCustomerTab('reservations')}
+                      className={`min-w-fit rounded-full px-3 sm:px-4 py-2.5 font-semibold transition ${activeCustomerTab === 'reservations' ? 'bg-rose-500 text-white shadow-md shadow-rose-500/25' : 'bg-slate-950/40 text-slate-400 border border-white/5 hover:bg-slate-800 hover:text-white'}`}
+                    >
+                      📅 Table Reservations
+                    </button>
+                  )}
                   <button 
                     onClick={() => setActiveCustomerTab('orders')}
-                    className={`min-w-fit rounded-full px-3 sm:px-4 py-2.5 font-semibold transition ${activeCustomerTab === 'orders' ? 'bg-white text-rose-600 shadow-sm' : 'bg-white/10 text-slate-600 hover:bg-white/30'}`}
+                    className={`min-w-fit rounded-full px-3 sm:px-4 py-2.5 font-semibold transition ${activeCustomerTab === 'orders' ? 'bg-rose-500 text-white shadow-md shadow-rose-500/25' : 'bg-slate-950/40 text-slate-400 border border-white/5 hover:bg-slate-800 hover:text-white'}`}
                   >
                     🚚 Track Orders & History
                   </button>
                   <button 
                     onClick={() => setActiveCustomerTab('reviews')}
-                    className={`min-w-fit rounded-full px-3 sm:px-4 py-2.5 font-semibold transition ${activeCustomerTab === 'reviews' ? 'bg-white text-rose-600 shadow-sm' : 'bg-white/10 text-slate-600 hover:bg-white/30'}`}
+                    className={`min-w-fit rounded-full px-3 sm:px-4 py-2.5 font-semibold transition ${activeCustomerTab === 'reviews' ? 'bg-rose-500 text-white shadow-md shadow-rose-500/25' : 'bg-slate-950/40 text-slate-400 border border-white/5 hover:bg-slate-800 hover:text-white'}`}
                   >
                     ⭐ Reviews & Feedback
                   </button>
@@ -774,7 +903,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
               {activeCustomerTab === 'browse' && (
                 <div>
                   {/* Filters & Search */}
-                  <div className="flex flex-col md:flex-row gap-3 sm:gap-4 mb-4 sm:mb-6 bg-white/15 backdrop-blur-3xl p-3 sm:p-4 rounded-3xl border border-white/10 shadow-sm">
+                  <div className="flex flex-col md:flex-row gap-3 sm:gap-4 mb-4 sm:mb-6 bg-slate-900/45 backdrop-blur-3xl p-3 sm:p-4 rounded-3xl border border-white/10 shadow-lg">
                     <div className="flex-1 relative">
                       <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
                       <input 
@@ -782,28 +911,28 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                         value={menuSearch}
                         onChange={(e) => setMenuSearch(e.target.value)}
                         placeholder="Search truffle fries, woodfired pizza, classic pasta..." 
-                        className="w-full pl-9 pr-4 py-3 sm:py-2 bg-white/90 border border-white/20 rounded-2xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-rose-500"
+                        className="w-full pl-9 pr-4 py-3 sm:py-2 bg-slate-900/60 border border-white/10 rounded-2xl text-sm text-white focus:outline-none focus:border-rose-500/40 focus:ring-1 focus:ring-rose-500/30 transition placeholder-slate-400"
                       />
                     </div>
                     
-                    <div className="grid grid-cols-1 sm:flex sm:flex-wrap gap-2 items-center">
+                    <div className="flex flex-wrap gap-1.5 items-center w-full sm:w-auto">
                       <button 
                         onClick={() => setMenuFilters({ ...menuFilters, veg: !menuFilters.veg })}
-                        className={`w-full sm:w-auto px-3 py-2 rounded-lg text-xs font-semibold border transition-all ${menuFilters.veg ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-200 text-slate-600 bg-white'}`}
+                        className={`flex-1 sm:flex-initial px-2.5 py-1.5 rounded-lg text-[11px] font-semibold border transition-all ${menuFilters.veg ? 'bg-emerald-500 border-emerald-500 text-white font-bold' : 'border-white/10 text-slate-300 bg-slate-900/50 hover:bg-slate-800 hover:text-white'}`}
                       >
-                        🟢 Veg Only
+                        🟢 Veg
                       </button>
                       <button 
                         onClick={() => setMenuFilters({ ...menuFilters, vegan: !menuFilters.vegan })}
-                        className={`w-full sm:w-auto px-3 py-2 rounded-lg text-xs font-semibold border transition-all ${menuFilters.vegan ? 'bg-green-600 border-green-600 text-white' : 'border-slate-200 text-slate-600 bg-white'}`}
+                        className={`flex-1 sm:flex-initial px-2.5 py-1.5 rounded-lg text-[11px] font-semibold border transition-all ${menuFilters.vegan ? 'bg-green-600 border-green-600 text-white font-bold' : 'border-white/10 text-slate-300 bg-slate-900/50 hover:bg-slate-800 hover:text-white'}`}
                       >
                         🌱 Vegan
                       </button>
                       <button 
                         onClick={() => setMenuFilters({ ...menuFilters, gf: !menuFilters.gf })}
-                        className={`w-full sm:w-auto px-3 py-2 rounded-lg text-xs font-semibold border transition-all ${menuFilters.gf ? 'bg-amber-500 border-amber-500 text-white' : 'border-slate-200 text-slate-600 bg-white'}`}
+                        className={`flex-1 sm:flex-initial px-2.5 py-1.5 rounded-lg text-[11px] font-semibold border transition-all ${menuFilters.gf ? 'bg-amber-500 border-amber-500 text-white font-bold' : 'border-white/10 text-slate-300 bg-slate-900/50 hover:bg-slate-800 hover:text-white'}`}
                       >
-                        🌾 Gluten-Free
+                        🌾 GF
                       </button>
                     </div>
                   </div>
@@ -814,7 +943,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                       <button
                         key={cat.id}
                         onClick={() => setSelectedCategory(cat.id)}
-                        className={`px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${selectedCategory === cat.id ? 'bg-rose-600 text-white shadow-md' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'}`}
+                        className={`px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${selectedCategory === cat.id ? 'bg-rose-500 text-white shadow-md shadow-rose-500/10' : 'bg-slate-900/50 border border-white/10 text-slate-350 hover:bg-slate-800 hover:text-white'}`}
                       >
                         {cat.name}
                       </button>
@@ -822,7 +951,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                   </div>
 
                   {/* Menu Items Grid */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 mt-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-3 gap-2 sm:gap-6 mt-2">
                     {data.menuItems
                       .filter((item: any) => !selectedCategory || item.categoryId === selectedCategory)
                       .filter((item: any) => item.name.toLowerCase().includes(menuSearch.toLowerCase()) || (item.description && item.description.toLowerCase().includes(menuSearch.toLowerCase())))
@@ -830,50 +959,50 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                       .filter((item: any) => !menuFilters.vegan || item.isVegan)
                       .filter((item: any) => !menuFilters.gf || item.isGlutenFree)
                       .map((item: any) => (
-                        <div key={item.id} className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col group">
-                          <div className="h-44 sm:h-40 overflow-hidden bg-slate-100 relative">
+                        <div key={item.id} className="bg-slate-950/45 border border-white/10 rounded-2xl sm:rounded-3xl overflow-hidden shadow-lg hover:shadow-xl hover:border-rose-500/40 transition-all duration-300 flex flex-col group backdrop-blur-md">
+                          <div className="h-28 sm:h-40 overflow-hidden bg-slate-900/60 relative">
                             <img 
                               src={item.imageUrl || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&auto=format&fit=crop&q=60"} 
                               alt={item.name}
                               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                             />
-                            <div className="absolute top-2 left-2 flex gap-1 flex-wrap">
-                              {item.isVegetarian && <span className="bg-emerald-500 text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase">Veg</span>}
-                              {item.isVegan && <span className="bg-green-600 text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase">Vegan</span>}
-                              {item.isGlutenFree && <span className="bg-amber-500 text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase">GF</span>}
+                            <div className="absolute top-1.5 left-1.5 flex gap-1 flex-wrap">
+                              {item.isVegetarian && <span className="bg-emerald-500 text-white text-[8px] sm:text-[9px] font-extrabold px-1.5 py-0.5 rounded-full uppercase">Veg</span>}
+                              {item.isVegan && <span className="bg-green-600 text-white text-[8px] sm:text-[9px] font-extrabold px-1.5 py-0.5 rounded-full uppercase">Vegan</span>}
+                              {item.isGlutenFree && <span className="bg-amber-500 text-white text-[8px] sm:text-[9px] font-extrabold px-1.5 py-0.5 rounded-full uppercase">GF</span>}
                             </div>
-                            <div className="absolute bottom-2 right-2 bg-black/75 backdrop-blur-sm text-white text-xs font-bold px-2 py-1 rounded-lg">
-                              ⏱ {item.preparationTime} mins
+                            <div className="absolute bottom-1.5 right-1.5 bg-black/75 backdrop-blur-sm text-white text-[9px] sm:text-xs font-bold px-1.5 py-0.5 rounded-lg">
+                              ⏱ {item.preparationTime}m
                             </div>
                           </div>
 
-                          <div className="p-4 flex-1 flex flex-col justify-between">
+                          <div className="p-2 sm:p-4 flex-1 flex flex-col justify-between">
                             <div>
-                              <h3 className="font-bold text-slate-900 text-base">{item.name}</h3>
-                              <p className="text-slate-500 text-xs mt-1 line-clamp-2">{item.description}</p>
+                              <h3 className="font-bold text-white text-xs sm:text-base line-clamp-1">{item.name}</h3>
+                              <p className="text-slate-400 text-[10px] sm:text-xs mt-0.5 line-clamp-1 sm:line-clamp-2 leading-relaxed">{item.description}</p>
                               
                               {/* Spice Level Indicator */}
                               {item.spiceLevel > 0 && (
-                                <div className="flex gap-0.5 mt-2">
+                                <div className="flex gap-0.5 mt-1 sm:mt-2">
                                   {Array.from({ length: item.spiceLevel }).map((_, i) => (
-                                    <Flame key={i} className="h-3.5 w-3.5 text-rose-600 fill-rose-600" />
+                                    <Flame key={i} className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-rose-500 fill-rose-500" />
                                   ))}
                                 </div>
                               )}
                             </div>
 
-                            <div className="flex items-center justify-between mt-4">
-                              <span className="text-lg font-black text-rose-600">{formatCurrency(item.price)}</span>
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-2 mt-2 sm:mt-4">
+                              <span className="text-sm sm:text-lg font-black text-rose-400">{formatCurrency(item.price)}</span>
                               <button
                                 onClick={() => addToCart(item)}
                                 disabled={!item.isAvailable}
-                                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                                className={`w-full sm:w-auto px-2.5 py-1.5 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-bold transition-all ${
                                   item.isAvailable 
                                     ? 'bg-rose-500 text-white hover:bg-rose-600 active:scale-95 shadow-sm' 
-                                    : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                                    : 'bg-slate-900/60 text-slate-500 border border-white/5 cursor-not-allowed'
                                 }`}
                               >
-                                {item.isAvailable ? 'Add to Cart +' : 'Sold Out'}
+                                {item.isAvailable ? 'Add +' : 'Sold Out'}
                               </button>
                             </div>
                           </div>
@@ -885,9 +1014,9 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
 
               {/* TAB 2: TABLE RESERVATION */}
               {activeCustomerTab === 'reservations' && (
-                <div className="bg-white border border-slate-200 rounded-3xl p-6">
-                  <h3 className="text-lg font-extrabold text-slate-900 mb-2">Book a Premium Table</h3>
-                  <p className="text-xs text-slate-500 mb-6">Instantly block live tables. Managers will confirm booking request in real-time.</p>
+                <div className="bg-slate-950/45 border border-white/10 rounded-3xl p-6 backdrop-blur-md shadow-xl text-white">
+                  <h3 className="text-lg font-extrabold text-white mb-2">Book a Premium Table</h3>
+                  <p className="text-xs text-slate-400 mb-6">Instantly block live tables. Managers will confirm booking request in real-time.</p>
 
                   <form onSubmit={async (e) => {
                     e.preventDefault();
@@ -906,45 +1035,45 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                     }
                   }} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Your Full Name *</label>
+                      <label className="block text-xs font-bold text-slate-300 uppercase mb-1">Your Full Name *</label>
                       <input 
                         type="text" 
                         required
                         value={reservationForm.customerName}
                         onChange={(e) => setReservationForm({ ...reservationForm, customerName: e.target.value })}
                         placeholder="e.g. Alice Smith" 
-                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm"
+                        className="w-full px-3 py-2 bg-slate-900/60 border border-white/10 rounded-xl text-sm text-white placeholder-slate-400 focus:outline-none focus:border-rose-500/40 transition"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Phone Number *</label>
+                      <label className="block text-xs font-bold text-slate-300 uppercase mb-1">Phone Number *</label>
                       <input 
                         type="tel" 
                         required
                         value={reservationForm.customerPhone}
                         onChange={(e) => setReservationForm({ ...reservationForm, customerPhone: e.target.value })}
                         placeholder="e.g. 555-0199" 
-                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm"
+                        className="w-full px-3 py-2 bg-slate-900/60 border border-white/10 rounded-xl text-sm text-white placeholder-slate-400 focus:outline-none focus:border-rose-500/40 transition"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Select Table *</label>
+                      <label className="block text-xs font-bold text-slate-300 uppercase mb-1">Select Table *</label>
                       <select 
                         required
                         value={reservationForm.tableId}
                         onChange={(e) => setReservationForm({ ...reservationForm, tableId: e.target.value })}
-                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm"
+                        className="w-full px-3 py-2 bg-slate-900/60 border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:border-rose-500/40 transition"
                       >
-                        <option value="">-- Choose Live Table --</option>
+                        <option value="" className="bg-slate-950 text-white">-- Choose Live Table --</option>
                         {data.tables.map((t: any) => (
-                          <option key={t.id} value={t.id}>
+                          <option key={t.id} value={t.id} className="bg-slate-950 text-white">
                             Table {t.tableNumber} (Capacity: {t.capacity} guests) - [{t.status}]
                           </option>
                         ))}
                       </select>
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Number of Guests *</label>
+                      <label className="block text-xs font-bold text-slate-300 uppercase mb-1">Number of Guests *</label>
                       <input 
                         type="number" 
                         required
@@ -952,33 +1081,33 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                         max="20"
                         value={reservationForm.numberOfGuests}
                         onChange={(e) => setReservationForm({ ...reservationForm, numberOfGuests: Number(e.target.value) })}
-                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm"
+                        className="w-full px-3 py-2 bg-slate-900/60 border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:border-rose-500/40 transition"
                       />
                     </div>
                     <div className="md:col-span-2">
-                      <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Reservation Date & Time *</label>
+                      <label className="block text-xs font-bold text-slate-300 uppercase mb-1">Reservation Date & Time *</label>
                       <input 
                         type="datetime-local" 
                         required
                         value={reservationForm.reservationTime}
                         onChange={(e) => setReservationForm({ ...reservationForm, reservationTime: e.target.value })}
-                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm"
+                        className="w-full px-3 py-2 bg-slate-900/60 border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:border-rose-500/40 transition"
                       />
                     </div>
                     <div className="md:col-span-2">
-                      <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Special Notes or Allergy Requests</label>
+                      <label className="block text-xs font-bold text-slate-300 uppercase mb-1">Special Notes or Allergy Requests</label>
                       <textarea 
                         rows={3}
                         value={reservationForm.notes}
                         onChange={(e) => setReservationForm({ ...reservationForm, notes: e.target.value })}
                         placeholder="Prefer near window, celebrating birthday, gluten allergy..." 
-                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm"
+                        className="w-full px-3 py-2 bg-slate-900/60 border border-white/10 rounded-xl text-sm text-white placeholder-slate-400 focus:outline-none focus:border-rose-500/40 transition"
                       />
                     </div>
                     <div className="md:col-span-2">
                       <button 
                         type="submit" 
-                        className="w-full py-3 bg-rose-600 text-white font-extrabold rounded-2xl hover:bg-rose-700 transition-all shadow-md active:scale-95"
+                        className="w-full py-3 bg-rose-500 text-white font-extrabold rounded-2xl hover:bg-rose-600 transition-all shadow-md active:scale-95"
                       >
                         Submit Reservation Request
                       </button>
@@ -990,25 +1119,25 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
               {/* TAB 3: ORDER HISTORY & TRACKER */}
               {activeCustomerTab === 'orders' && (
                 <div className="space-y-6">
-                  <div className="bg-white border border-slate-200 rounded-3xl p-6">
-                    <h3 className="text-lg font-extrabold text-slate-900 mb-4">Your Orders & Real-Time Tracker</h3>
-                    <div className="grid gap-3 md:grid-cols-3 mb-6 text-xs text-slate-500">
-                      <div className="rounded-3xl border border-slate-200 bg-slate-50 p-3">
-                        <p className="font-semibold text-slate-900">Active Order</p>
-                        <p>{latestCustomerOrder ? latestCustomerOrder.status.toUpperCase() : 'None'}</p>
+                  <div className="bg-slate-950/45 border border-white/10 rounded-3xl p-6 backdrop-blur-md shadow-xl text-white">
+                    <h3 className="text-lg font-extrabold text-white mb-4">Your Orders & Real-Time Tracker</h3>
+                    <div className="grid gap-3 md:grid-cols-3 mb-6 text-xs text-slate-400">
+                      <div className="rounded-3xl border border-white/10 bg-slate-900/50 p-3">
+                        <p className="font-bold text-white mb-1">Active Order</p>
+                        <p className="text-rose-400 font-semibold">{latestCustomerOrder ? latestCustomerOrder.status.toUpperCase() : 'None'}</p>
                       </div>
-                      <div className="rounded-3xl border border-slate-200 bg-slate-50 p-3">
-                        <p className="font-semibold text-slate-900">Total Orders</p>
-                        <p>{customerOrders.length}</p>
+                      <div className="rounded-3xl border border-white/10 bg-slate-900/50 p-3">
+                        <p className="font-bold text-white mb-1">Total Orders</p>
+                        <p className="text-slate-250 font-semibold">{customerOrders.length}</p>
                       </div>
-                      <div className="rounded-3xl border border-slate-200 bg-slate-50 p-3">
-                        <p className="font-semibold text-slate-900">Last Order Type</p>
-                        <p>{customerOrders[0]?.orderType?.toUpperCase() || 'N/A'}</p>
+                      <div className="rounded-3xl border border-white/10 bg-slate-900/50 p-3">
+                        <p className="font-bold text-white mb-1">Last Order Type</p>
+                        <p className="text-slate-250 font-semibold">{customerOrders[0]?.orderType?.toUpperCase() || 'N/A'}</p>
                       </div>
                     </div>
                     {customerOrders.length === 0 ? (
-                      <div className="text-center py-12 text-slate-400">
-                        <ShoppingBag className="h-12 w-12 mx-auto mb-3" />
+                      <div className="text-center py-12 text-slate-500">
+                        <ShoppingBag className="h-12 w-12 mx-auto mb-3 text-slate-500" />
                         <p className="text-sm font-semibold">You have not placed any orders yet.</p>
                       </div>
                     ) : (
@@ -1017,54 +1146,55 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                           const table = data.tables.find((t: any) => t.id === order.tableId);
                           const items = data.orderItems.filter((oi: any) => oi.orderId === order.id);
                           
-                          // Convert statuses into user-friendly colors and icons
+                          // Convert statuses into user-friendly colors and icons (dark theme matching)
                           const statusColors: Record<string, string> = {
-                            pending: 'bg-amber-100 text-amber-800 border-amber-300',
-                            accepted: 'bg-blue-100 text-blue-800 border-blue-300',
-                            cooking: 'bg-purple-100 text-purple-800 border-purple-300 animate-pulse',
-                            ready: 'bg-indigo-100 text-indigo-800 border-indigo-300',
-                            served: 'bg-rose-100 text-rose-800 border-rose-300',
-                            completed: 'bg-emerald-100 text-emerald-800 border-emerald-300',
-                            cancelled: 'bg-slate-100 text-slate-800 border-slate-300'
+                            pending: 'bg-amber-500/20 text-amber-300 border-amber-500/25',
+                            accepted: 'bg-blue-500/20 text-blue-300 border-blue-500/25',
+                            cooking: 'bg-purple-500/20 text-purple-300 border-purple-500/25 animate-pulse',
+                            ready: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/25',
+                            served: 'bg-rose-500/20 text-rose-300 border-rose-500/25',
+                            completed: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/25',
+                            cancelled: 'bg-slate-500/20 text-slate-400 border-slate-500/25'
                           };
 
                           return (
-                            <div key={order.id} className="border border-slate-200 rounded-2xl bg-slate-50/50 overflow-hidden">
+                            <div key={order.id} className="border border-white/10 rounded-2xl bg-slate-900/35 hover:bg-slate-900/50 transition-all duration-200 overflow-hidden">
                               <button
                                 type="button"
                                 onClick={() => setSelectedOrderId(order.id === selectedOrderId ? null : order.id)}
-                                className="w-full p-4 text-left"
+                                className="w-full p-3 sm:p-4 text-left"
                               >
                                 <div className="flex flex-wrap justify-between items-center gap-2 mb-3">
                                   <div>
-                                    <span className="text-xs font-bold text-slate-500">Order ID: #{order.id}</span>
-                                    <span className="mx-2 text-slate-300">|</span>
-                                    <span className="text-xs font-bold text-slate-900">Type: {order.orderType.toUpperCase()} {table ? `(Table ${table.tableNumber})` : ''}</span>
+                                    <span className="text-xs font-bold text-slate-400">Order ID: #{order.id}</span>
+                                    <span className="mx-2 text-slate-500">|</span>
+                                    <span className="text-xs font-bold text-white">Type: {order.orderType.toUpperCase()} {table ? `(T${table.tableNumber})` : ''}</span>
                                   </div>
-                                  <span className={`text-[11px] font-extrabold px-2.5 py-1 rounded-full border ${statusColors[order.status] || 'bg-slate-100'}`}>
+                                  <span className={`text-[10px] sm:text-[11px] font-extrabold px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full border ${statusColors[order.status] || 'bg-slate-900 border-white/10'}`}>
                                     ● {order.status.toUpperCase()}
                                   </span>
                                 </div>
 
-                                <div className="grid gap-2 md:grid-cols-3 text-[11px] text-slate-500">
-                                  <div className="rounded-2xl border border-slate-200 bg-white p-3">
-                                    <p className="font-semibold text-slate-900">Ordered</p>
-                                    <p>{new Date(order.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}</p>
+                                <div className="grid grid-cols-3 gap-1.5 text-center text-[10px] md:text-[11px] text-slate-400">
+                                  <div className="rounded-xl sm:rounded-2xl border border-white/5 bg-slate-950/65 p-1.5 sm:p-3">
+                                    <p className="font-bold text-white">Ordered</p>
+                                    <p className="text-slate-300 truncate">{new Date(order.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</p>
                                   </div>
-                                  <div className="rounded-2xl border border-slate-200 bg-white p-3">
-                                    <p className="font-semibold text-slate-900">Payment</p>
-                                    <p>{order.paymentMethod ? order.paymentMethod.toUpperCase() : 'Offline'}</p>
+                                  <div className="rounded-xl sm:rounded-2xl border border-white/5 bg-slate-950/65 p-1.5 sm:p-3">
+                                    <p className="font-bold text-white">Payment</p>
+                                    <p className="text-slate-300 truncate">{order.paymentMethod ? order.paymentMethod.toUpperCase() : 'Offline'}</p>
                                   </div>
-                                  <div className="rounded-2xl border border-slate-200 bg-white p-3">
-                                    <p className="font-semibold text-slate-900">Final total</p>
-                                    <p>{formatCurrency(order.finalAmount)}</p>
+                                  <div className="rounded-xl sm:rounded-2xl border border-white/5 bg-slate-950/65 p-1.5 sm:p-3">
+                                    <p className="font-bold text-white">Total</p>
+                                    <p className="text-rose-400 font-extrabold truncate">{formatCurrency(order.finalAmount)}</p>
                                   </div>
                                 </div>
                               </button>
 
-                              <div className="w-full bg-slate-200 rounded-full h-2 mb-4 mx-4 overflow-hidden">
+                              {/* Progress tracker bar layout */}
+                              <div className="mx-3 sm:mx-4 bg-white/10 rounded-full h-1.5 mb-3 sm:mb-4 overflow-hidden">
                                 <div 
-                                  className="bg-rose-600 h-2 transition-all duration-1000" 
+                                  className="bg-rose-600 h-1.5 transition-all duration-1000" 
                                   style={{
                                     width: order.status === 'pending' ? '15%' :
                                            order.status === 'accepted' ? '35%' :
@@ -1077,44 +1207,44 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                               </div>
 
                               {selectedOrderId === order.id ? (
-                                <div className="border-t border-slate-200 bg-slate-100 p-4 text-xs text-slate-700 space-y-3">
+                                <div className="border-t border-white/10 bg-slate-950 p-4 text-xs text-slate-300 space-y-3">
                                   <div className="grid gap-2 md:grid-cols-2">
-                                    <div className="rounded-2xl bg-white p-3 border border-slate-200">
-                                      <p className="font-semibold text-slate-900">Order note</p>
-                                      <p>{order.notes || 'No special instructions'}</p>
+                                    <div className="rounded-2xl bg-slate-900 p-3 border border-white/5">
+                                      <p className="font-bold text-white mb-0.5">Order note</p>
+                                      <p className="text-slate-300">{order.notes || 'No special instructions'}</p>
                                     </div>
-                                    <div className="rounded-2xl bg-white p-3 border border-slate-200">
-                                      <p className="font-semibold text-slate-900">Coupon</p>
-                                      <p>{order.couponCode || 'None'}</p>
+                                    <div className="rounded-2xl bg-slate-900 p-3 border border-white/5">
+                                      <p className="font-bold text-white mb-0.5">Coupon</p>
+                                      <p className="text-slate-300">{order.couponCode || 'None'}</p>
                                     </div>
                                   </div>
                                   <div className="space-y-2">
-                                    <p className="font-semibold text-slate-900">Items</p>
+                                    <p className="font-bold text-white">Items</p>
                                     {items.map((oi: any) => {
                                       const menuItem = data.menuItems.find((m: any) => m.id === oi.menuItemId);
                                       return (
-                                        <div key={oi.id} className="flex justify-between rounded-2xl bg-white p-3 border border-slate-200">
+                                        <div key={oi.id} className="flex justify-between rounded-2xl bg-slate-900 p-3 border border-white/5">
                                           <div>
-                                            <p className="font-semibold text-slate-900">{menuItem ? menuItem.name : 'Unknown item'}</p>
-                                            <p className="text-[11px] text-slate-500">Qty: {oi.quantity} {oi.notes ? `• ${oi.notes}` : ''}</p>
+                                            <p className="font-semibold text-white">{menuItem ? menuItem.name : 'Unknown item'}</p>
+                                            <p className="text-[11px] text-slate-400">Qty: {oi.quantity} {oi.notes ? `• ${oi.notes}` : ''}</p>
                                           </div>
-                                          <p className="font-bold text-slate-900">{formatCurrency(Number(oi.unitPrice) * oi.quantity)}</p>
+                                          <p className="font-bold text-white">{formatCurrency(Number(oi.unitPrice) * oi.quantity)}</p>
                                         </div>
                                       );
                                     })}
                                   </div>
                                   <div className="grid gap-2 md:grid-cols-2">
-                                    <div className="rounded-2xl bg-white p-3 border border-slate-200">
-                                      <p className="font-semibold text-slate-900">Order status</p>
-                                      <p className="capitalize">{order.status}</p>
+                                    <div className="rounded-2xl bg-slate-900 p-3 border border-white/5">
+                                      <p className="font-bold text-white mb-0.5">Order status</p>
+                                      <p className="capitalize text-slate-300">{order.status}</p>
                                     </div>
-                                    <div className="rounded-2xl bg-white p-3 border border-slate-200">
-                                      <p className="font-semibold text-slate-900">Order details</p>
-                                      <p>{order.orderType === 'dine-in' ? `Table ${table?.tableNumber}` : order.address || 'Delivery address not set'}</p>
+                                    <div className="rounded-2xl bg-slate-900 p-3 border border-white/5">
+                                      <p className="font-bold text-white mb-0.5">Order details</p>
+                                      <p className="text-slate-300">{order.orderType === 'dine-in' ? `Table ${table?.tableNumber}` : order.address || 'Delivery address not set'}</p>
                                     </div>
                                   </div>
-                                  <div className="mt-4 rounded-3xl border border-slate-200 bg-slate-100 p-4">
-                                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500 mb-3">Order Progress</p>
+                                  <div className="mt-4 rounded-3xl border border-white/10 bg-slate-900/40 p-4">
+                                    <p className="text-xs font-bold uppercase tracking-[0.24em] text-slate-400 mb-3">Order Progress</p>
                                     <div className="space-y-3">
                                       {[
                                         { step: 1, label: 'Confirmed by waiter', active: ['accepted','cooking','ready','served','completed'].includes(order.status) },
@@ -1124,11 +1254,11 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                                         { step: 5, label: order.orderType === 'delivery' ? 'Ready for delivery' : 'Ready to serve', active: ['served','completed'].includes(order.status) },
                                       ].map((step) => (
                                         <div key={step.step} className="flex items-center gap-3">
-                                          <div className={`h-6 w-6 rounded-full border flex items-center justify-center ${step.active ? 'bg-rose-600 border-rose-600 text-white' : 'bg-white border-slate-300 text-slate-400'}`}>
+                                          <div className={`h-6 w-6 rounded-full border flex items-center justify-center ${step.active ? 'bg-rose-500 border-rose-500 text-white' : 'bg-slate-900 border-white/10 text-slate-500'}`}>
                                             <span className="text-[10px] font-bold">{step.step}</span>
                                           </div>
                                           <div>
-                                            <p className={`text-sm ${step.active ? 'text-slate-900 font-semibold' : 'text-slate-500'}`}>{step.label}</p>
+                                            <p className={`text-sm ${step.active ? 'text-white font-semibold' : 'text-slate-500'}`}>{step.label}</p>
                                           </div>
                                         </div>
                                       ))}
@@ -1148,8 +1278,8 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
               {activeCustomerTab === 'reviews' && (
                 <div className="space-y-6">
                   {/* Review Submit form */}
-                  <div className="bg-white border border-slate-200 rounded-3xl p-6">
-                    <h3 className="text-base font-extrabold text-slate-900 mb-4">Rate Your Dining Experience</h3>
+                  <div className="bg-slate-950/45 border border-white/10 rounded-3xl p-6 backdrop-blur-md shadow-xl text-white">
+                    <h3 className="text-base font-extrabold text-white mb-4">Rate Your Dining Experience</h3>
                     <form onSubmit={async (e) => {
                       e.preventDefault();
                       if (!reviewForm.customerName || !reviewForm.menuItemId || !reviewForm.comment) {
@@ -1169,63 +1299,63 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                     }} className="space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Your Name</label>
+                          <label className="block text-xs font-bold text-slate-355 uppercase mb-1">Your Name</label>
                           <input 
                             type="text" 
                             required
                             value={reviewForm.customerName}
                             onChange={(e) => setReviewForm({ ...reviewForm, customerName: e.target.value })}
                             placeholder="e.g. Alice Smith" 
-                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm"
+                            className="w-full px-3 py-2 bg-slate-900/60 border border-white/10 rounded-xl text-sm text-white placeholder-slate-400 focus:outline-none focus:border-rose-500/40 transition"
                           />
                         </div>
                         <div>
-                          <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Select Menu Item Rated</label>
+                          <label className="block text-xs font-bold text-slate-355 uppercase mb-1">Select Menu Item Rated</label>
                           <select 
                             required
                             value={reviewForm.menuItemId}
                             onChange={(e) => setReviewForm({ ...reviewForm, menuItemId: e.target.value })}
-                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm"
+                            className="w-full px-3 py-2 bg-slate-900/60 border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:border-rose-500/40 transition"
                           >
-                            <option value="">-- Choose Item --</option>
+                            <option value="" className="bg-slate-950 text-white">-- Choose Item --</option>
                             {data.menuItems.map((m: any) => (
-                              <option key={m.id} value={m.id}>{m.name}</option>
+                              <option key={m.id} value={m.id} className="bg-slate-955 text-white">{m.name}</option>
                             ))}
                           </select>
                         </div>
                       </div>
 
                       <div>
-                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Rating (1 to 5 Stars)</label>
+                        <label className="block text-xs font-bold text-slate-355 uppercase mb-1">Rating (1 to 5 Stars)</label>
                         <select 
                           required
                           value={reviewForm.rating}
                           onChange={(e) => setReviewForm({ ...reviewForm, rating: Number(e.target.value) })}
-                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm"
+                          className="w-full px-3 py-2 bg-slate-900/60 border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:border-rose-500/40 transition"
                         >
-                          <option value="5">⭐⭐⭐⭐⭐ Excellent (5 Stars)</option>
-                          <option value="4">⭐⭐⭐⭐ Great (4 Stars)</option>
-                          <option value="3">⭐⭐⭐ Good (3 Stars)</option>
-                          <option value="2">⭐⭐ Fair (2 Stars)</option>
-                          <option value="1">⭐ Poor (1 Star)</option>
+                          <option value="5" className="bg-slate-955 text-white">⭐⭐⭐⭐⭐ Excellent (5 Stars)</option>
+                          <option value="4" className="bg-slate-955 text-white">⭐⭐⭐⭐ Great (4 Stars)</option>
+                          <option value="3" className="bg-slate-955 text-white">⭐⭐⭐ Good (3 Stars)</option>
+                          <option value="2" className="bg-slate-955 text-white">⭐⭐ Fair (2 Stars)</option>
+                          <option value="1" className="bg-slate-955 text-white">⭐ Poor (1 Star)</option>
                         </select>
                       </div>
 
                       <div>
-                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Write your detailed review</label>
+                        <label className="block text-xs font-bold text-slate-355 uppercase mb-1">Write your detailed review</label>
                         <textarea 
                           rows={3}
                           required
                           value={reviewForm.comment}
                           onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
                           placeholder="What did you like about the seasoning, service, temperature, and presentation?" 
-                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm"
+                          className="w-full px-3 py-2 bg-slate-900/60 border border-white/10 rounded-xl text-sm text-white placeholder-slate-400 focus:outline-none focus:border-rose-500/40 transition"
                         />
                       </div>
 
                       <button 
                         type="submit" 
-                        className="w-full py-2.5 bg-rose-600 text-white font-extrabold rounded-xl text-sm hover:bg-rose-700 transition-all shadow-sm active:scale-95"
+                        className="w-full py-2.5 bg-rose-500 text-white font-extrabold rounded-xl text-sm hover:bg-rose-600 transition-all shadow-sm active:scale-95"
                       >
                         Submit Feedback
                       </button>
@@ -1233,23 +1363,23 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                   </div>
 
                   {/* Existing Reviews List */}
-                  <div className="bg-white border border-slate-200 rounded-3xl p-6">
-                    <h3 className="text-base font-extrabold text-slate-900 mb-4">Latest Guest Reviews</h3>
+                  <div className="bg-slate-950/45 border border-white/10 rounded-3xl p-6 backdrop-blur-md shadow-xl text-white">
+                    <h3 className="text-base font-extrabold text-white mb-4">Latest Guest Reviews</h3>
                     <div className="space-y-4">
                       {data.reviews.map((r: any) => {
                         const m = data.menuItems.find((mi: any) => mi.id === r.menuItemId);
                         return (
-                          <div key={r.id} className="border-b border-slate-100 pb-3 last:border-0">
+                          <div key={r.id} className="border-b border-white/5 pb-3 last:border-0 text-slate-300">
                             <div className="flex justify-between items-start">
                               <div>
-                                <p className="font-bold text-sm text-slate-900">{r.customerName}</p>
-                                <p className="text-[11px] text-rose-600 font-semibold mb-1">Reviewed: {m ? m.name : 'Gourmet Dish'}</p>
+                                <p className="font-bold text-sm text-white">{r.customerName}</p>
+                                <p className="text-[11px] text-rose-455 font-semibold mb-1">Reviewed: {m ? m.name : 'Gourmet Dish'}</p>
                               </div>
                               <span className="text-xs text-amber-500 font-bold">
                                 {Array.from({ length: r.rating }).map(() => '⭐').join('')}
                               </span>
                             </div>
-                            <p className="text-slate-600 text-xs italic">"{r.comment}"</p>
+                            <p className="text-slate-400 text-xs italic leading-relaxed">"{r.comment}"</p>
                           </div>
                         );
                       })}
@@ -1259,22 +1389,38 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
               )}
             </div>
 
-            {/* SIDE CART COLUMN (Only visible on Browse Menu Tab) */}
-            {activeCustomerTab === 'browse' && (
-              <div className="w-full lg:w-96 shrink-0" id="mobile-checkout">
-                <div className="bg-white border border-slate-200 rounded-3xl p-4 sm:p-6 shadow-sm lg:sticky lg:top-24">
-                  <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
-                    <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-                      <ShoppingCart className="h-5 w-5 text-rose-600" /> Shopping Cart
-                    </h3>
-                    <span className="bg-rose-100 text-rose-800 text-xs font-bold px-2.5 py-0.5 rounded-full">
+            {/* BACKDROP OVERLAY FOR CART DRAWER */}
+            {activeCustomerTab === 'browse' && isCartOpen && (
+              <div 
+                className="fixed inset-0 z-40 bg-black/60 backdrop-blur-xs transition-opacity duration-300"
+                onClick={() => setIsCartOpen(false)}
+              />
+            )}
+
+            {/* SIDE CART DRAWER (Only visible on Browse Menu Tab and if isCartOpen is true) */}
+            {activeCustomerTab === 'browse' && isCartOpen && (
+              <div className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-slate-950/95 border-l border-white/10 shadow-2xl p-4 sm:p-6 overflow-y-auto flex flex-col backdrop-blur-2xl transition-all duration-300 transform translate-x-0" id="mobile-checkout">
+                <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-4">
+                  <h3 className="text-base font-extrabold text-white flex items-center gap-2">
+                    <ShoppingCart className="h-5 w-5 text-rose-500" /> Shopping Cart
+                  </h3>
+                  <div className="flex items-center gap-2">
+                    <span className="bg-rose-500/20 text-rose-300 border border-rose-500/25 text-xs font-bold px-2.5 py-0.5 rounded-full">
                       {cart.reduce((sum, c) => sum + c.quantity, 0)} Items
                     </span>
+                    <button 
+                      onClick={() => setIsCartOpen(false)}
+                      className="p-1.5 rounded-xl hover:bg-white/10 text-slate-400 hover:text-white transition"
+                      title="Close Cart"
+                    >
+                      <X className="h-5 w-5" />
+                    </button>
                   </div>
+                </div>
 
                   {cart.length === 0 ? (
                     <div className="text-center py-12 text-slate-400">
-                      <ShoppingBag className="h-12 w-12 mx-auto mb-3 text-slate-300" />
+                      <ShoppingBag className="h-12 w-12 mx-auto mb-3 text-slate-500" />
                       <p className="text-sm font-semibold">Your cart is empty.</p>
                       <p className="text-xs mt-1">Pick gourmet items from digital menu to add.</p>
                     </div>
@@ -1283,10 +1429,10 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                       {/* Cart List */}
                       <div className="space-y-3 pr-1">
                         {cart.map((item) => (
-                          <div key={item.menuItem.id} className="flex justify-between items-start gap-2 border-b border-slate-100 pb-3">
+                          <div key={item.menuItem.id} className="flex justify-between items-start gap-2 border-b border-white/5 pb-3">
                             <div className="flex-1">
-                              <h4 className="font-bold text-xs text-slate-800">{item.menuItem.name}</h4>
-                              <p className="text-rose-600 text-xs font-extrabold mt-0.5">{formatCurrency(item.menuItem.price)}</p>
+                              <h4 className="font-bold text-xs text-white">{item.menuItem.name}</h4>
+                              <p className="text-rose-455 text-xs font-extrabold mt-0.5">{formatCurrency(item.menuItem.price)}</p>
                               <input 
                                 type="text"
                                 placeholder="Special instructions..."
@@ -1295,21 +1441,21 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                                   const val = e.target.value;
                                   setCart(cart.map(c => c.menuItem.id === item.menuItem.id ? { ...c, notes: val } : c));
                                 }}
-                                className="w-full mt-1.5 px-2 py-2 sm:py-0.5 bg-slate-50 border border-slate-200 rounded text-xs sm:text-[10px] focus:outline-none"
+                                className="w-full mt-1.5 px-2 py-2 sm:py-0.5 bg-slate-900/60 border border-white/10 rounded text-xs sm:text-[10px] text-white focus:outline-none focus:border-rose-500/40 transition"
                               />
                             </div>
 
                             <div className="flex items-center gap-1.5 mt-1">
                               <button 
                                 onClick={() => updateCartQty(item.menuItem.id, -1)}
-                                className="h-8 w-8 rounded bg-slate-100 hover:bg-slate-200 text-xs font-bold"
+                                className="h-8 w-8 rounded bg-slate-900 border border-white/5 hover:bg-slate-800 text-xs font-bold text-white"
                               >
                                 -
                               </button>
                               <span className="text-xs font-black w-4 text-center">{item.quantity}</span>
                               <button 
                                 onClick={() => updateCartQty(item.menuItem.id, 1)}
-                                className="h-8 w-8 rounded bg-slate-100 hover:bg-slate-200 text-xs font-bold"
+                                className="h-8 w-8 rounded bg-slate-900 border border-white/5 hover:bg-slate-800 text-xs font-bold text-white"
                               >
                                 +
                               </button>
@@ -1319,20 +1465,20 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                       </div>
 
                       {/* Promo Code Coupon Area */}
-                      <div className="pt-2 border-t border-slate-100">
-                        <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Coupon Promo Code</label>
+                      <div className="pt-2 border-t border-white/5">
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Coupon Promo Code</label>
                         <div className="flex gap-2">
                           <input 
                             type="text"
                             placeholder="e.g. WELCOME10"
                             value={cartCoupon}
                             onChange={(e) => setCartCoupon(e.target.value)}
-                            className="min-w-0 flex-1 px-2.5 py-2.5 sm:py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs uppercase"
+                            className="min-w-0 flex-1 px-2.5 py-2.5 sm:py-1.5 bg-slate-900/60 border border-white/10 rounded-xl text-xs uppercase text-white placeholder-slate-400 focus:outline-none focus:border-rose-500/45 transition"
                           />
                           <button 
                             type="button"
                             onClick={applyCouponToCart}
-                            className="bg-slate-800 text-white text-xs font-bold px-3 py-2.5 sm:py-1.5 rounded-xl hover:bg-slate-900 transition-all"
+                            className="bg-rose-500 text-white text-xs font-bold px-3 py-2.5 sm:py-1.5 rounded-xl hover:bg-rose-600 transition-all"
                           >
                             Apply
                           </button>
@@ -1342,21 +1488,10 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                       {/* Checkout Details (Table No, Order Type, Payment Method) */}
                       <div className="grid gap-2 pt-2 border-t border-slate-100">
                         <div>
-                          <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Order Type</label>
-                          <select 
-                            value={customerOrderType}
-                            onChange={(e: any) => {
-                              const nextType = e.target.value as 'dine-in' | 'delivery';
-                              setCustomerOrderType(nextType);
-                              if (nextType === 'delivery') {
-                                setCustomerPaymentMethod('card');
-                              }
-                            }}
-                            className="w-full bg-white border border-slate-300 p-2.5 sm:p-1.5 rounded-lg text-xs text-slate-800"
-                          >
-                            <option value="dine-in">Dine-In (Table)</option>
-                            <option value="delivery">Delivery</option>
-                          </select>
+                          <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Order Mode</label>
+                          <div className="w-full bg-slate-100 border border-slate-200 p-2.5 rounded-lg text-xs text-slate-800 font-bold capitalize select-none">
+                            {customerMode === 'online' ? 'Online Delivery' : 'Dine-In Table Ordering'}
+                          </div>
                         </div>
                         {customerOrderType === 'dine-in' ? (
                           <div>
@@ -1417,10 +1552,10 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                                 />
                               </div>
                             </div>
-                            <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+                            <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-3 shadow-md">
                               <div className="flex items-center justify-between">
-                                <label className="block text-[10px] font-bold text-slate-500 uppercase">Payment Method</label>
-                                <span className="rounded-full border border-slate-300 px-2 py-0.5 text-[10px] font-semibold text-slate-700">Secure</span>
+                                <label className="block text-[10px] font-bold text-slate-400 uppercase">Payment Method</label>
+                                <span className="rounded-full border border-white/10 bg-rose-500/10 px-2 py-0.5 text-[10px] font-semibold text-rose-300">Secure</span>
                               </div>
                               <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-2">
                                 {[
@@ -1432,17 +1567,17 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                                     key={value}
                                     type="button"
                                     onClick={() => setCustomerPaymentMethod(value as 'card' | 'upi' | 'wallet')}
-                                    className={`flex items-center justify-center gap-1 rounded-xl border px-2 py-2.5 sm:py-2 text-[11px] font-semibold transition ${customerPaymentMethod === value ? 'border-black bg-black text-white' : 'border-slate-200 bg-white text-slate-700 hover:border-black'}`}
+                                    className={`flex items-center justify-center gap-1 rounded-xl border px-2 py-2.5 sm:py-2 text-[11px] font-semibold transition ${customerPaymentMethod === value ? 'border-rose-500 bg-rose-500 text-white' : 'border-white/10 bg-slate-900 text-slate-300 hover:border-white/20'}`}
                                   >
                                     <Icon className="h-3.5 w-3.5" />
                                     {label}
                                   </button>
                                 ))}
                               </div>
-                              <p className="mt-2 text-[10px] text-slate-500">Delivery orders require your full address and chosen payment method.</p>
+                              <p className="mt-2 text-[10px] text-slate-400 leading-normal">Delivery orders require your full address and chosen payment method.</p>
                               {customerPaymentMethod === 'upi' && (
-                                <div className="mt-3 grid grid-cols-1 sm:grid-cols-[96px_1fr] gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-3">
-                                  <div className="mx-auto flex h-32 w-32 sm:h-24 sm:w-24 items-center justify-center rounded-xl border border-emerald-200 bg-white p-1.5">
+                                <div className="mt-3 grid grid-cols-1 sm:grid-cols-[96px_1fr] gap-3 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-3">
+                                  <div className="mx-auto flex h-32 w-32 sm:h-24 sm:w-24 items-center justify-center rounded-xl border border-white/10 bg-white p-1.5 shadow-sm">
                                     <img
                                       src={getDeliveryUpiQrUrl()}
                                       alt="UPI payment QR code"
@@ -1450,15 +1585,15 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                                     />
                                   </div>
                                   <div className="min-w-0">
-                                    <div className="flex items-center gap-1.5 text-emerald-800">
+                                    <div className="flex items-center gap-1.5 text-emerald-300">
                                       <Smartphone className="h-3.5 w-3.5" />
                                       <p className="text-[10px] font-extrabold uppercase tracking-[0.18em]">UPI Scan</p>
                                     </div>
-                                    <p className="mt-1 text-lg font-black text-slate-950">₹{getCartTotal().toFixed(2)}</p>
-                                    <p className="mt-1 truncate text-[11px] font-semibold text-slate-700">pamms.k07@upi</p>
+                                    <p className="mt-1 text-lg font-black text-white">₹{getCartTotal().toFixed(2)}</p>
+                                    <p className="mt-1 truncate text-[11px] font-semibold text-slate-300">pamms.k07@upi</p>
                                     <a
                                       href={getDeliveryUpiPaymentUri()}
-                                      className="mt-2 inline-flex items-center gap-1 rounded-xl bg-emerald-700 px-3 py-1.5 text-[11px] font-bold text-white transition hover:bg-emerald-800"
+                                      className="mt-2 inline-flex items-center gap-1 rounded-xl bg-emerald-600 px-3 py-1.5 text-[11px] font-bold text-white transition hover:bg-emerald-700"
                                     >
                                       Open UPI App
                                     </a>
@@ -1467,15 +1602,15 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                               )}
                             </div>
 
-                            <div className="mt-4 rounded-3xl border border-slate-200 bg-slate-50 p-4">
-                              <p className="text-xs uppercase tracking-[0.24em] text-slate-500 mb-2">Delivery map preview</p>
-                              <p className="text-sm text-slate-700 mb-3">Verify your delivery location with Google Maps before placing the order.</p>
+                            <div className="mt-4 rounded-3xl border border-white/10 bg-slate-900/40 p-4">
+                              <p className="text-xs uppercase tracking-[0.24em] text-slate-400 mb-2 font-bold">Delivery map preview</p>
+                              <p className="text-sm text-slate-300 mb-3 leading-relaxed">Verify your delivery location with Google Maps before placing the order.</p>
                               {customerAddressLine.trim() && customerDistrict.trim() && customerState.trim() && customerPincode.trim() ? (
                                 <a
                                   href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${customerAddressLine}, ${customerDistrict}, ${customerState} ${customerPincode}`)}`}
                                   target="_blank"
                                   rel="noreferrer"
-                                  className="inline-flex items-center gap-2 rounded-2xl bg-slate-950 px-4 py-2 text-xs font-bold text-white hover:bg-slate-800 transition"
+                                  className="inline-flex items-center gap-2 rounded-2xl bg-white text-slate-950 px-4 py-2 text-xs font-bold hover:bg-slate-100 transition"
                                 >
                                   <MapPin className="h-4 w-4" /> Open in Google Maps
                                 </a>
@@ -1488,24 +1623,24 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                       </div>
 
                       {/* Pricing Breakdown */}
-                      <div className="bg-slate-50 p-3 rounded-2xl text-xs space-y-1.5 mt-4">
-                        <div className="flex justify-between text-slate-600">
+                      <div className="bg-slate-900/60 border border-white/5 p-3 rounded-2xl text-xs space-y-1.5 mt-4">
+                        <div className="flex justify-between text-slate-350">
                           <span>Subtotal</span>
-                          <span>{formatCurrency(getCartSubtotal())}</span>
+                          <span className="text-white font-medium">{formatCurrency(getCartSubtotal())}</span>
                         </div>
                         {appliedCoupon && (
-                          <div className="flex justify-between text-emerald-600 font-semibold">
+                          <div className="flex justify-between text-emerald-450 font-semibold">
                             <span>Discount ({appliedCoupon.code})</span>
                             <span>-{formatCurrency(getCartDiscount())}</span>
                           </div>
                         )}
-                        <div className="flex justify-between text-slate-600">
+                        <div className="flex justify-between text-slate-355">
                           <span>GST (5%)</span>
-                          <span>{formatCurrency(getCartGst())}</span>
+                          <span className="text-white font-medium">{formatCurrency(getCartGst())}</span>
                         </div>
-                        <div className="flex justify-between text-slate-900 font-bold border-t border-slate-200 pt-1.5 text-sm">
+                        <div className="flex justify-between text-white font-bold border-t border-white/5 pt-1.5 text-sm">
                           <span>Final Total</span>
-                          <span className="text-rose-600">{formatCurrency(getCartTotal())}</span>
+                          <span className="text-rose-400">{formatCurrency(getCartTotal())}</span>
                         </div>
                       </div>
 
@@ -1530,13 +1665,12 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                     </div>
                   )}
                 </div>
-              </div>
             )}
 
-            {activeCustomerTab === 'browse' && cart.length > 0 && (
-              <a
-                href="#mobile-checkout"
-                className="fixed bottom-3 left-3 right-3 z-40 flex items-center justify-between rounded-2xl border border-rose-200 bg-rose-600 px-4 py-3 text-white shadow-2xl lg:hidden"
+            {activeCustomerTab === 'browse' && cart.length > 0 && !isCartOpen && (
+              <button
+                onClick={() => setIsCartOpen(true)}
+                className="fixed bottom-3 left-3 right-3 z-40 flex items-center justify-between rounded-2xl border border-rose-500 bg-rose-600 px-4 py-3 text-white shadow-2xl lg:hidden"
               >
                 <span className="flex items-center gap-2 text-sm font-black">
                   <ShoppingCart className="h-4 w-4" />
@@ -1544,7 +1678,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                 </span>
                 <span className="text-sm font-black">{formatCurrency(getCartTotal())}</span>
                 <span className="rounded-xl bg-white px-3 py-1.5 text-xs font-black text-rose-700">Checkout</span>
-              </a>
+              </button>
             )}
           </div>
         )}
@@ -3182,8 +3316,8 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
       {/* ======================================================= */}
       {activeModal === 'addMenuItem' && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl border border-slate-200">
-            <div className="bg-slate-900 p-5 text-white flex justify-between items-center">
+          <div className="bg-slate-950/95 backdrop-blur-2xl rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl border border-white/10 text-white">
+            <div className="bg-slate-900/60 p-5 text-white flex justify-between items-center border-b border-white/10">
               <h3 className="font-extrabold text-base">{selectedEditItem ? 'Edit Culinary Catalog Item' : 'Add New Culinary Masterpiece'}</h3>
               <button onClick={() => setActiveModal(null)} className="text-slate-400 hover:text-white"><X className="h-5 w-5" /></button>
             </div>
@@ -3191,114 +3325,114 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
             <form onSubmit={handleSaveMenuItemSubmit} className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
-                  <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">Item Title *</label>
+                  <label className="block text-[11px] font-bold text-slate-400 uppercase mb-1">Item Title *</label>
                   <input 
                     type="text" required
                     value={menuItemForm.name}
                     onChange={(e) => setMenuItemForm({ ...menuItemForm, name: e.target.value })}
                     placeholder="e.g. Tuscan Truffle Pizza" 
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm"
+                    className="w-full px-3 py-2 bg-slate-900 border border-white/10 text-white rounded-xl text-sm focus:border-rose-500/50 focus:ring-1 focus:ring-rose-500/50 placeholder-slate-500"
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">Price (₹) *</label>
+                  <label className="block text-[11px] font-bold text-slate-400 uppercase mb-1">Price (₹) *</label>
                   <input 
                     type="text" required
                     value={menuItemForm.price}
                     onChange={(e) => setMenuItemForm({ ...menuItemForm, price: e.target.value })}
                     placeholder="14.50" 
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm"
+                    className="w-full px-3 py-2 bg-slate-900 border border-white/10 text-white rounded-xl text-sm focus:border-rose-500/50 focus:ring-1 focus:ring-rose-500/50 placeholder-slate-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">Category *</label>
+                  <label className="block text-[11px] font-bold text-slate-400 uppercase mb-1">Category *</label>
                   <select 
                     value={menuItemForm.categoryId}
                     onChange={(e) => setMenuItemForm({ ...menuItemForm, categoryId: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm"
+                    className="w-full px-3 py-2 bg-slate-900 border border-white/10 text-white rounded-xl text-sm focus:border-rose-500/50"
                   >
                     {data.categories.map((c: any) => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
+                      <option key={c.id} value={c.id} className="bg-slate-950 text-white">{c.name}</option>
                     ))}
                   </select>
                 </div>
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">Food Description</label>
+                <label className="block text-[11px] font-bold text-slate-400 uppercase mb-1">Food Description</label>
                 <textarea 
                   rows={2}
                   value={menuItemForm.description}
                   onChange={(e) => setMenuItemForm({ ...menuItemForm, description: e.target.value })}
                   placeholder="Tell guests about ingredients, flavors and baking style..." 
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm"
+                  className="w-full px-3 py-2 bg-slate-900 border border-white/10 text-white rounded-xl text-sm focus:border-rose-500/50 placeholder-slate-500"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">Prep Time (Mins)</label>
+                  <label className="block text-[11px] font-bold text-slate-400 uppercase mb-1">Prep Time (Mins)</label>
                   <input 
                     type="number"
                     value={menuItemForm.preparationTime}
                     onChange={(e) => setMenuItemForm({ ...menuItemForm, preparationTime: Number(e.target.value) })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm"
+                    className="w-full px-3 py-2 bg-slate-900 border border-white/10 text-white rounded-xl text-sm focus:border-rose-500/50"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">Spice Level (0-3)</label>
+                  <label className="block text-[11px] font-bold text-slate-400 uppercase mb-1">Spice Level (0-3)</label>
                   <input 
                     type="number" min="0" max="3"
                     value={menuItemForm.spiceLevel}
                     onChange={(e) => setMenuItemForm({ ...menuItemForm, spiceLevel: Number(e.target.value) })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm"
+                    className="w-full px-3 py-2 bg-slate-900 border border-white/10 text-white rounded-xl text-sm focus:border-rose-500/50"
                   />
                 </div>
               </div>
 
               <div className="flex gap-4">
-                <label className="flex items-center gap-2 text-xs font-semibold">
+                <label className="flex items-center gap-2 text-xs font-semibold text-slate-300">
                   <input 
                     type="checkbox"
                     checked={menuItemForm.isVegetarian}
                     onChange={(e) => setMenuItemForm({ ...menuItemForm, isVegetarian: e.target.checked })}
-                    className="rounded"
+                    className="rounded bg-slate-900 border-white/10 text-rose-500 focus:ring-0"
                   /> Vegetarian
                 </label>
-                <label className="flex items-center gap-2 text-xs font-semibold">
+                <label className="flex items-center gap-2 text-xs font-semibold text-slate-300">
                   <input 
                     type="checkbox"
                     checked={menuItemForm.isVegan}
                     onChange={(e) => setMenuItemForm({ ...menuItemForm, isVegan: e.target.checked })}
-                    className="rounded"
+                    className="rounded bg-slate-900 border-white/10 text-rose-500 focus:ring-0"
                   /> Vegan
                 </label>
-                <label className="flex items-center gap-2 text-xs font-semibold">
+                <label className="flex items-center gap-2 text-xs font-semibold text-slate-300">
                   <input 
                     type="checkbox"
                     checked={menuItemForm.isGlutenFree}
                     onChange={(e) => setMenuItemForm({ ...menuItemForm, isGlutenFree: e.target.checked })}
-                    className="rounded"
+                    className="rounded bg-slate-900 border-white/10 text-rose-500 focus:ring-0"
                   /> Gluten Free
                 </label>
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">Image URL</label>
+                <label className="block text-[11px] font-bold text-slate-400 uppercase mb-1">Image URL</label>
                 <input 
                   type="text"
                   value={menuItemForm.imageUrl}
                   onChange={(e) => setMenuItemForm({ ...menuItemForm, imageUrl: e.target.value })}
                   placeholder="https://images.unsplash.com/..." 
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm"
+                  className="w-full px-3 py-2 bg-slate-900 border border-white/10 text-white rounded-xl text-sm focus:border-rose-500/50 placeholder-slate-500"
                 />
               </div>
 
               <button 
                 type="submit" 
-                className="w-full py-3 bg-rose-600 text-white font-extrabold rounded-2xl text-xs hover:bg-rose-700 transition-all shadow"
+                className="w-full py-3 bg-rose-600 hover:bg-rose-700 text-white font-extrabold rounded-2xl text-xs transition-all shadow-lg shadow-rose-500/20 active:scale-95"
               >
                 Save Catalog Item Changes
               </button>

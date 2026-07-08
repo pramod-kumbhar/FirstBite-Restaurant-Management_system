@@ -288,7 +288,7 @@ export async function POST(request: NextRequest) {
           .where(eq(reservations.id, id));
       } else {
         await db.insert(reservations).values({
-          customerId: customerId || null,
+          customerId: customerId || (authUser && isCustomerRole(authUser.role) ? authUser.userId : null),
           customerName,
           customerPhone,
           tableId: tableId || null,
@@ -306,19 +306,27 @@ export async function POST(request: NextRequest) {
 
       try {
         let resolvedCustomerEmail = payload.customerEmail || null;
-        let resolvedCustomerName = customerName || authUser.email || null;
-        if (!resolvedCustomerEmail && customerId) {
-          const matchedCustomer = (await db.select().from(users).where(eq(users.id, customerId)))[0];
+        let resolvedCustomerName = customerName || null;
+        
+        // 1. If customerId is provided or resolved, fetch their email from user account
+        const targetCustomerId = customerId || (id ? (await db.select().from(reservations).where(eq(reservations.id, id)))[0]?.customerId : null) || (authUser && isCustomerRole(authUser.role) ? authUser.userId : null);
+        
+        if (targetCustomerId) {
+          const matchedCustomer = (await db.select().from(users).where(eq(users.id, targetCustomerId)))[0];
           if (matchedCustomer && isCustomerRole(matchedCustomer.role)) {
             resolvedCustomerEmail = matchedCustomer.email;
             resolvedCustomerName = resolvedCustomerName || matchedCustomer.name;
           }
         }
-        if (!resolvedCustomerEmail && authUser.email) {
+        
+        // 2. If email is still not resolved, and the logged-in user is a customer, fallback to their email
+        if (!resolvedCustomerEmail && authUser && isCustomerRole(authUser.role)) {
           resolvedCustomerEmail = authUser.email;
+          resolvedCustomerName = resolvedCustomerName || 'Guest Customer';
         }
 
-        if (resolvedCustomerEmail && resolvedCustomerName) {
+        // Only send reservation email to the resolved customer (NEVER to the manager/staff)
+        if (resolvedCustomerEmail && resolvedCustomerName && (!authUser || !isStaffRole(authUser.role) || resolvedCustomerEmail !== authUser.email)) {
           const tableInfo = tableId ? (await db.select().from(restaurantTables).where(eq(restaurantTables.id, tableId)))[0] : null;
           const reservationDateLabel = parsedTime.toLocaleString('en-IN', {
             dateStyle: 'medium',

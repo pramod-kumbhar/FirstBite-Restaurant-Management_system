@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { ArrowLeft } from 'lucide-react';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -43,83 +44,96 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-950 via-slate-900 to-slate-800 px-4 py-12 text-white">
-      <div className="mx-auto flex max-w-5xl flex-col gap-8 rounded-3xl border border-white/10 bg-white/10 p-8 shadow-2xl backdrop-blur-xl lg:flex-row lg:items-center">
-        <div className="flex-1">
-          <p className="text-sm uppercase tracking-[0.3em] text-rose-300">FirstBite</p>
-          <h1 className="mt-3 text-4xl font-semibold sm:text-5xl">Create your account.</h1>
-          <p className="mt-4 text-lg text-slate-300">Join the restaurant management experience with secure access and email verification.</p>
+    <div 
+      className="min-h-screen w-full flex items-center justify-center px-4 py-6 sm:py-12 text-white relative"
+      style={{ 
+        backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.65), rgba(0, 0, 0, 0.75)), url('/firstbite_welcome_bg.jpg')`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center'
+      }}
+    >
+      <div className="w-full max-w-md bg-slate-950/65 backdrop-blur-xl border border-white/10 rounded-3xl p-5 sm:p-8 shadow-2xl relative">
+        <button 
+          onClick={() => router.push('/login')} 
+          className="mb-6 flex items-center gap-1.5 text-sm font-semibold text-rose-300 hover:text-rose-200 transition"
+        >
+          <ArrowLeft className="h-4 w-4" /> Back
+        </button>
+
+        <div className="mb-6 text-center select-none flex items-center gap-2 justify-center">
+          <span className="italic font-extrabold text-2xl">First</span>
+          <span className="bg-rose-500 text-white px-2.5 py-0.5 rounded-xl not-italic text-lg font-bold">Bite</span>
         </div>
 
-        <div className="w-full max-w-md rounded-2xl border border-white/10 bg-slate-950/60 p-6">
-          <h2 className="text-2xl font-semibold">Sign up</h2>
-          <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
-            <div>
-              <label className="mb-2 block text-sm text-slate-300" htmlFor="name">Full name</label>
-              <input
-                id="name"
-                type="text"
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                className="w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-0"
-                placeholder="Jane Doe"
-                required
-              />
-            </div>
-            <div>
-              <label className="mb-2 block text-sm text-slate-300" htmlFor="email">Email</label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                className="w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-0"
-                placeholder="you@example.com"
-                required
-              />
-            </div>
-            <div>
-              <label className="mb-2 block text-sm text-slate-300" htmlFor="phone">Phone</label>
-              <input
-                id="phone"
-                type="tel"
-                value={phone}
-                onChange={(event) => setPhone(event.target.value)}
-                className="w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-0"
-                placeholder="(555) 123-4567"
-              />
-            </div>
-            <div>
-              <label className="mb-2 block text-sm text-slate-300" htmlFor="password">Password</label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                className="w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-0"
-                placeholder="••••••••"
-                minLength={6}
-                required
-              />
-            </div>
-            {error ? <p className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 text-sm text-rose-200">{error}</p> : null}
-            {success ? <p className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-200">{success}</p> : null}
+        <h2 className="text-3xl font-extrabold text-white text-center mb-1">Create Account</h2>
+        <p className="text-slate-300 text-sm text-center mb-6">Join FirstBite to start ordering and booking tables</p>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full rounded-full bg-rose-500 px-4 py-3 font-semibold text-white transition hover:bg-rose-600 disabled:cursor-not-allowed disabled:opacity-70"
-            >
-              {loading ? 'Creating account…' : 'Create account'}
-            </button>
-          </form>
+        <form className="space-y-4" onSubmit={handleSubmit}>
+          <div>
+            <label className="mb-2 block text-sm text-slate-300" htmlFor="name">Full name</label>
+            <input
+              id="name"
+              type="text"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              className="w-full rounded-xl border border-white/10 bg-slate-900/60 px-4 py-3 text-white outline-none ring-0 focus:border-rose-500/40 transition"
+              placeholder="Jane Doe"
+              required
+            />
+          </div>
+          <div>
+            <label className="mb-2 block text-sm text-slate-300" htmlFor="email">Email</label>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              className="w-full rounded-xl border border-white/10 bg-slate-900/60 px-4 py-3 text-white outline-none ring-0 focus:border-rose-500/40 transition"
+              placeholder="you@example.com"
+              required
+            />
+          </div>
+          <div>
+            <label className="mb-2 block text-sm text-slate-300" htmlFor="phone">Phone</label>
+            <input
+              id="phone"
+              type="tel"
+              value={phone}
+              onChange={(event) => setPhone(event.target.value)}
+              className="w-full rounded-xl border border-white/10 bg-slate-900/60 px-4 py-3 text-white outline-none ring-0 focus:border-rose-500/40 transition"
+              placeholder="(555) 123-4567"
+            />
+          </div>
+          <div>
+            <label className="mb-2 block text-sm text-slate-300" htmlFor="password">Password</label>
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              className="w-full rounded-xl border border-white/10 bg-slate-900/60 px-4 py-3 text-white outline-none ring-0 focus:border-rose-500/40 transition"
+              placeholder="••••••••"
+              minLength={6}
+              required
+            />
+          </div>
+          {error ? <p className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 text-sm text-rose-200">{error}</p> : null}
+          {success ? <p className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-200">{success}</p> : null}
 
-          <p className="mt-4 text-sm text-slate-400">
-            Already have an account?{' '}
-            <Link className="font-medium text-rose-300 hover:text-rose-200" href="/login">
-              Sign in instead
-            </Link>
-          </p>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full rounded-full bg-rose-500 px-4 py-3 font-semibold text-white transition hover:bg-rose-600 disabled:cursor-not-allowed disabled:opacity-70 mt-2"
+          >
+            {loading ? 'Creating account…' : 'Create account'}
+          </button>
+        </form>
+
+        <div className="mt-6 pt-6 border-t border-white/5 text-center text-sm text-slate-400">
+          Already have an account?{' '}
+          <Link className="font-semibold text-rose-300 hover:text-rose-200 hover:underline" href="/login">
+            Sign in instead
+          </Link>
         </div>
       </div>
     </div>

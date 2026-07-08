@@ -35,5 +35,19 @@
     "postcss": "8.5.8",
     "tailwindcss": "4.1.17",
     "typescript": "5.9.3"
-  }
+  },
+  "version": "1.0.0",
+  "description": "",
+  "main": "setup-db.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pramod-kumbhar/FirstBite-Restaurant-Management_system.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/pramod-kumbhar/FirstBite-Restaurant-Management_system/issues"
+  },
+  "homepage": "https://github.com/pramod-kumbhar/FirstBite-Restaurant-Management_system#readme"
 }

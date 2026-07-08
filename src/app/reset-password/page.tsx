@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { ArrowLeft } from 'lucide-react';
 
 function ResetPasswordForm() {
   const router = useRouter();
@@ -56,22 +57,64 @@ function ResetPasswordForm() {
   };
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-white/90 px-4 py-12 text-slate-900" style={{ backgroundImage: 'radial-gradient(circle at top, rgba(255,255,255,0.9), transparent 45%), linear-gradient(180deg, rgba(255,255,255,0.85), rgba(241,245,249,0.95))' }}>
-      <div className="mx-auto max-w-md w-full rounded-[32px] border border-slate-200/40 bg-white/80 p-8 shadow-2xl backdrop-blur-3xl ring-1 ring-slate-200/30">
-        <h1 className="text-3xl font-semibold text-slate-900">Set a new password</h1>
-        <p className="mt-3 text-sm text-slate-600">Enter your new password below.</p>
-        <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
+    <div 
+      className="min-h-screen w-full flex items-center justify-center px-4 py-12 text-white relative"
+      style={{ 
+        backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.65), rgba(0, 0, 0, 0.75)), url('/firstbite_welcome_bg.jpg')`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center'
+      }}
+    >
+      <div className="w-full max-w-md bg-slate-950/65 backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-2xl relative">
+        <button 
+          onClick={() => router.push('/login')} 
+          className="mb-6 flex items-center gap-1.5 text-sm font-semibold text-rose-300 hover:text-rose-200 transition"
+        >
+          <ArrowLeft className="h-4 w-4" /> Back to Sign In
+        </button>
+
+        <div className="mb-6 text-center select-none flex items-center gap-2 justify-center">
+          <span className="italic font-extrabold text-2xl">First</span>
+          <span className="bg-rose-500 text-white px-2.5 py-0.5 rounded-xl not-italic text-lg font-bold">Bite</span>
+        </div>
+
+        <h1 className="text-3xl font-extrabold text-white text-center mb-1">New Password</h1>
+        <p className="text-slate-300 text-sm text-center mb-6">Enter your new password below</p>
+        
+        <form className="space-y-4" onSubmit={handleSubmit}>
           <div>
             <label className="mb-2 block text-sm text-slate-300" htmlFor="password">New password</label>
-            <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full rounded-xl border border-slate-200/40 bg-slate-50 px-4 py-3 text-slate-900 outline-none" required />
+            <input 
+              id="password" 
+              type="password" 
+              value={password} 
+              onChange={(e) => setPassword(e.target.value)} 
+              className="w-full rounded-xl border border-white/10 bg-slate-900/60 px-4 py-3 text-white outline-none focus:border-rose-500/40 transition" 
+              placeholder="••••••••"
+              required 
+            />
           </div>
           <div>
-            <label className="mb-2 block text-sm text-slate-600" htmlFor="confirmPassword">Confirm password</label>
-            <input id="confirmPassword" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="w-full rounded-xl border border-slate-200/40 bg-slate-50 px-4 py-3 text-slate-900 outline-none" required />
+            <label className="mb-2 block text-sm text-slate-300" htmlFor="confirmPassword">Confirm password</label>
+            <input 
+              id="confirmPassword" 
+              type="password" 
+              value={confirmPassword} 
+              onChange={(e) => setConfirmPassword(e.target.value)} 
+              className="w-full rounded-xl border border-white/10 bg-slate-900/60 px-4 py-3 text-white outline-none focus:border-rose-500/40 transition" 
+              placeholder="••••••••"
+              required 
+            />
           </div>
-          {error ? <p className="rounded-lg border border-rose-200/60 bg-rose-100/80 p-3 text-sm text-rose-700">{error}</p> : null}
-          {message ? <p className="rounded-lg border border-emerald-200/60 bg-emerald-100/80 p-3 text-sm text-emerald-700">{message}</p> : null}
-          <button type="submit" disabled={loading} className="w-full rounded-full bg-rose-600 px-4 py-3 font-semibold text-white transition hover:bg-rose-700 disabled:opacity-70">{loading ? 'Updating…' : 'Update password'}</button>
+          {error ? <p className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 text-sm text-rose-200">{error}</p> : null}
+          {message ? <p className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-200">{message}</p> : null}
+          <button 
+            type="submit" 
+            disabled={loading} 
+            className="w-full rounded-full bg-rose-500 px-4 py-3 font-semibold text-white transition hover:bg-rose-600 disabled:opacity-70 mt-2"
+          >
+            {loading ? 'Updating…' : 'Update password'}
+          </button>
         </form>
       </div>
     </div>
