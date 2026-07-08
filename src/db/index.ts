@@ -47,7 +47,7 @@ const requiredForeignKeys: Record<string, string[]> = {
 
 const defaultManager = {
   email: "manager@restaurant.com",
-  passwordHash: "$2b$12$50zdXXuEWZci.XL4DSXNYOMdBOAP1MaxJP2LRxlIjICpeiGOiVltC",
+  passwordHash: "$2b$10$umKJd.rOvMv3mcZPlUySxu9Q8vs4FFDXKM3bsp94KyVAtqZL4SsRu",
 };
 
 function tableExists(tableName: string) {
@@ -303,6 +303,20 @@ function ensureSchema() {
       created_by TEXT,
       created_at INTEGER NOT NULL DEFAULT (cast((julianday('now') - 2440587.5) * 86400000 as integer))
     );
+  `);
+
+  client.exec(`
+    CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+    CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
+    CREATE INDEX IF NOT EXISTS idx_menu_items_category_id ON menu_items(category_id);
+    CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_orders_customer_id ON orders(customer_id);
+    CREATE INDEX IF NOT EXISTS idx_orders_table_id ON orders(table_id);
+    CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id);
+    CREATE INDEX IF NOT EXISTS idx_order_items_menu_item_id ON order_items(menu_item_id);
+    CREATE INDEX IF NOT EXISTS idx_reservations_reservation_time ON reservations(reservation_time DESC);
+    CREATE INDEX IF NOT EXISTS idx_payments_created_at ON payments(created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_employee_shifts_date ON employee_shifts(date);
   `);
 }
 

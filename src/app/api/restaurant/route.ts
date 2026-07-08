@@ -5,7 +5,7 @@ import {
   orders, orderItems, suppliers, inventoryItems, purchaseOrders, 
   employeeShifts, payments, coupons, reviews, expenses, chefs, waiters, cashiers 
 } from '@/db/schema';
-import { seedDatabase, isDatabaseSeeded } from '@/db/seed';
+import { seedDatabase, ensureDatabaseSeeded } from '@/db/seed';
 import { eq, desc, asc, and, inArray, sql } from 'drizzle-orm';
 import { sendEmail } from '@/lib/email';
 import { hashPassword, verifyToken } from '@/lib/auth';
@@ -95,36 +95,106 @@ export async function GET(request: NextRequest) {
     if (!authUser) {
       return NextResponse.json({ success: false, error: 'Not authenticated' }, { status: 401 });
     }
-    // Check if seeded. If not, auto-seed.
-    const seeded = await isDatabaseSeeded();
-    if (!seeded) {
-      await seedDatabase();
+    await ensureDatabaseSeeded();
+
+    if (isCustomerRole(authUser.role)) {
+      const customerId = Number(authUser.userId);
+      const [
+        allCategories,
+        allMenuItems,
+        allTables,
+        allReservations,
+        allOrders,
+        allOrderItems,
+        allCoupons,
+        allReviews,
+      ] = await Promise.all([
+        db.select().from(categories).orderBy(asc(categories.name)),
+        db.select().from(menuItems).orderBy(asc(menuItems.name)),
+        db.select().from(restaurantTables).orderBy(asc(restaurantTables.tableNumber)),
+        db.select().from(reservations).where(eq(reservations.customerId, customerId)).orderBy(desc(reservations.reservationTime)),
+        db.select().from(orders).where(eq(orders.customerId, customerId)).orderBy(desc(orders.createdAt)),
+        db
+          .select({
+            id: orderItems.id,
+            orderId: orderItems.orderId,
+            menuItemId: orderItems.menuItemId,
+            quantity: orderItems.quantity,
+            unitPrice: orderItems.unitPrice,
+            notes: orderItems.notes,
+            status: orderItems.status,
+          })
+          .from(orderItems)
+          .innerJoin(orders, eq(orderItems.orderId, orders.id))
+          .where(eq(orders.customerId, customerId)),
+        db.select().from(coupons).orderBy(asc(coupons.code)),
+        db.select().from(reviews).orderBy(desc(reviews.createdAt)),
+      ]);
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          categories: allCategories,
+          menuItems: allMenuItems,
+          tables: allTables,
+          reservations: allReservations,
+          orders: allOrders,
+          orderItems: allOrderItems,
+          users: [],
+          suppliers: [],
+          inventory: [],
+          purchaseOrders: [],
+          shifts: [],
+          payments: [],
+          coupons: allCoupons,
+          reviews: allReviews,
+          expenses: [],
+          chefs: [],
+          waiters: [],
+          cashiers: [],
+        }
+      });
     }
 
-    const allCategories = await db.select().from(categories).orderBy(asc(categories.name));
-    const allMenuItems = await db.select().from(menuItems).orderBy(asc(menuItems.name));
-    const allTables = await db.select().from(restaurantTables).orderBy(asc(restaurantTables.tableNumber));
-    const allReservations = await db.select().from(reservations).orderBy(desc(reservations.reservationTime));
-    
-    // Get orders with items
-    const allOrders = await db.select().from(orders).orderBy(desc(orders.createdAt));
-    const allOrderItems = await db.select().from(orderItems);
-    const allUsers = await db.select().from(users).orderBy(asc(users.name));
-    
-    // Inventory, suppliers & POs
-    const allSuppliers = await db.select().from(suppliers).orderBy(asc(suppliers.name));
-    const allInventory = await db.select().from(inventoryItems).orderBy(asc(inventoryItems.name));
-    const allPurchaseOrders = await db.select().from(purchaseOrders).orderBy(desc(purchaseOrders.orderedAt));
-    
-    // Staff shifts, payments, coupons, reviews & expenses
-    const allShifts = await db.select().from(employeeShifts).orderBy(asc(employeeShifts.date));
-    const allPayments = await db.select().from(payments).orderBy(desc(payments.createdAt));
-    const allCoupons = await db.select().from(coupons).orderBy(asc(coupons.code));
-    const allReviews = await db.select().from(reviews).orderBy(desc(reviews.createdAt));
-    const allExpenses = await db.select().from(expenses).orderBy(desc(expenses.date));
-    const allChefs = await db.select().from(chefs).orderBy(asc(chefs.id));
-    const allWaiters = await db.select().from(waiters).orderBy(asc(waiters.id));
-    const allCashiers = await db.select().from(cashiers).orderBy(asc(cashiers.id));
+    const [
+      allCategories,
+      allMenuItems,
+      allTables,
+      allReservations,
+      allOrders,
+      allOrderItems,
+      allUsers,
+      allSuppliers,
+      allInventory,
+      allPurchaseOrders,
+      allShifts,
+      allPayments,
+      allCoupons,
+      allReviews,
+      allExpenses,
+      allChefs,
+      allWaiters,
+      allCashiers,
+    ] = await Promise.all([
+      db.select().from(categories).orderBy(asc(categories.name)),
+      db.select().from(menuItems).orderBy(asc(menuItems.name)),
+      db.select().from(restaurantTables).orderBy(asc(restaurantTables.tableNumber)),
+      db.select().from(reservations).orderBy(desc(reservations.reservationTime)),
+      db.select().from(orders).orderBy(desc(orders.createdAt)),
+      db.select().from(orderItems),
+      db.select().from(users).orderBy(asc(users.name)),
+      db.select().from(suppliers).orderBy(asc(suppliers.name)),
+      db.select().from(inventoryItems).orderBy(asc(inventoryItems.name)),
+      db.select().from(purchaseOrders).orderBy(desc(purchaseOrders.orderedAt)),
+      db.select().from(employeeShifts).orderBy(asc(employeeShifts.date)),
+      db.select().from(payments).orderBy(desc(payments.createdAt)),
+      db.select().from(coupons).orderBy(asc(coupons.code)),
+      db.select().from(reviews).orderBy(desc(reviews.createdAt)),
+      db.select().from(expenses).orderBy(desc(expenses.date)),
+      db.select().from(chefs).orderBy(asc(chefs.id)),
+      db.select().from(waiters).orderBy(asc(waiters.id)),
+      db.select().from(cashiers).orderBy(asc(cashiers.id)),
+    ]);
 
     return NextResponse.json({
       success: true,
@@ -360,10 +430,7 @@ export async function POST(request: NextRequest) {
 
     // 6. PLACE ORDER (CUSTOMER OR WAITER OR CASHIER)
     if (action === 'placeOrder') {
-      const seeded = await isDatabaseSeeded();
-      if (!seeded) {
-        await seedDatabase();
-      }
+      await ensureDatabaseSeeded();
 
       const { customerId, customerEmail, customerName, tableId, orderType, address, items, notes, couponCode, discountAmount, totalAmount, finalAmount, gstAmount } = payload;
       const normalizedItems = Array.isArray(items) ? items : [];

@@ -30,7 +30,21 @@ export async function POST(request: NextRequest) {
     let user: any = null;
 
     try {
-      const result = await db.select().from(users).where(eq(users.email, normalizedEmail));
+      const result = await db
+        .select({
+          id: users.id,
+          name: users.name,
+          email: users.email,
+          password: users.password,
+          role: users.role,
+          phone: users.phone,
+          loyaltyPoints: users.loyaltyPoints,
+          isEmailVerified: users.isEmailVerified,
+          isApproved: users.isApproved,
+        })
+        .from(users)
+        .where(eq(users.email, normalizedEmail))
+        .limit(1);
       user = result[0] || null;
     } catch (dbError: any) {
       console.error('Signin DB lookup failed:', dbError);

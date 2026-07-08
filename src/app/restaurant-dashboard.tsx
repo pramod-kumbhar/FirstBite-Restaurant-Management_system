@@ -226,10 +226,11 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
     }
 
     fetchData();
-    // Poll for updates every 10 seconds to keep KDS (Chef) and POS (Cashier) synced
+    const refreshMs = currentUser.role === 'customer' ? 30000 : 10000;
+    // Keep staff screens closely synced while avoiding unnecessary customer refreshes.
     const interval = setInterval(() => {
       fetchData();
-    }, 10000);
+    }, refreshMs);
     return () => clearInterval(interval);
   }, [authChecked, currentUser]);
 

@@ -6,17 +6,61 @@ import {
 } from './schema';
 import { sql } from 'drizzle-orm';
 
-const defaultManagerPasswordHash = '$2b$12$50zdXXuEWZci.XL4DSXNYOMdBOAP1MaxJP2LRxlIjICpeiGOiVltC';
+const defaultManagerPasswordHash = '$2b$10$umKJd.rOvMv3mcZPlUySxu9Q8vs4FFDXKM3bsp94KyVAtqZL4SsRu';
+
+const globalForSeed = globalThis as typeof globalThis & {
+  __firstBiteSeedState?: {
+    checked: boolean;
+    seeded: boolean;
+    pending?: Promise<boolean>;
+  };
+};
+
+const seedState = globalForSeed.__firstBiteSeedState ?? {
+  checked: false,
+  seeded: false,
+};
+
+globalForSeed.__firstBiteSeedState = seedState;
 
 export async function isDatabaseSeeded() {
+  if (seedState.checked) {
+    return seedState.seeded;
+  }
+
   try {
     const result = await db.select({ count: sql<number>`count(*)` }).from(menuItems);
     const count = Number(result[0]?.count || 0);
-    return count >= 25;
+    seedState.checked = true;
+    seedState.seeded = count >= 25;
+    return seedState.seeded;
   } catch (error) {
     console.error("Check seed error:", error);
+    seedState.checked = false;
+    seedState.seeded = false;
     return false;
   }
+}
+
+export async function ensureDatabaseSeeded() {
+  if (await isDatabaseSeeded()) {
+    return false;
+  }
+
+  if (!seedState.pending) {
+    seedState.pending = (async () => {
+      seedState.checked = false;
+      if (await isDatabaseSeeded()) {
+        return false;
+      }
+      await seedDatabase();
+      return true;
+    })().finally(() => {
+      seedState.pending = undefined;
+    });
+  }
+
+  return seedState.pending;
 }
 
 export async function seedDatabase() {
@@ -290,4 +334,6 @@ export async function seedDatabase() {
   ]);
 
   console.log("Seeding successfully completed!");
+  seedState.checked = true;
+  seedState.seeded = true;
 }

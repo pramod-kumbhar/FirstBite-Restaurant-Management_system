@@ -42,7 +42,11 @@ export async function POST(request: NextRequest) {
     let user: any = null;
 
     try {
-      existing = await db.select().from(users).where(eq(users.email, normalizedEmail));
+      existing = await db
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.email, normalizedEmail))
+        .limit(1);
       if (existing.length > 0) {
         user = existing[0];
       }
@@ -74,7 +78,20 @@ export async function POST(request: NextRequest) {
         emailVerificationToken: verificationCode,
       });
 
-      const newUsers = await db.select().from(users).where(eq(users.email, normalizedEmail));
+      const newUsers = await db
+        .select({
+          id: users.id,
+          name: users.name,
+          email: users.email,
+          role: users.role,
+          phone: users.phone,
+          loyaltyPoints: users.loyaltyPoints,
+          isEmailVerified: users.isEmailVerified,
+          isApproved: users.isApproved,
+        })
+        .from(users)
+        .where(eq(users.email, normalizedEmail))
+        .limit(1);
       user = newUsers[0];
     } catch (dbError: any) {
       console.error('Signup DB write failed:', dbError);
@@ -92,17 +109,18 @@ export async function POST(request: NextRequest) {
 
     let emailSent = false;
     try {
-      const verificationEmailResult = await sendEmail({
-        to: normalizedEmail,
-        subject: 'Verify your FirstBite account',
-        html: verifyEmailHtml(normalizedName, verificationCode),
-      });
-
-      const welcomeEmailResult = await sendEmail({
-        to: normalizedEmail,
-        subject: '🍽 Welcome to FirstBite!',
-        html: welcomeEmailHtml(normalizedName),
-      });
+      const [verificationEmailResult, welcomeEmailResult] = await Promise.all([
+        sendEmail({
+          to: normalizedEmail,
+          subject: 'Verify your FirstBite account',
+          html: verifyEmailHtml(normalizedName, verificationCode),
+        }),
+        sendEmail({
+          to: normalizedEmail,
+          subject: 'Welcome to FirstBite!',
+          html: welcomeEmailHtml(normalizedName),
+        }),
+      ]);
 
       emailSent = Boolean(verificationEmailResult.success || welcomeEmailResult.success);
     } catch (emailError) {
