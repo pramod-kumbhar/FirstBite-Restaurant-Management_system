@@ -11,6 +11,7 @@ export default function SignupPage() {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [branch, setBranch] = useState('Ichalkaranji');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
@@ -21,11 +22,17 @@ export default function SignupPage() {
     setError('');
     setSuccess('');
 
+    if (phone && !/^\d{10}$/.test(phone)) {
+      setError('Please enter a valid 10-digit mobile number.');
+      setLoading(false);
+      return;
+    }
+
     try {
       const response = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, phone, password, role: 'customer' }),
+        body: JSON.stringify({ name, email, phone, password, role: 'customer', branch }),
       });
 
       const result = await response.json();
@@ -77,7 +84,7 @@ export default function SignupPage() {
               value={name}
               onChange={(event) => setName(event.target.value)}
               className="w-full rounded-xl border border-white/10 bg-slate-900/60 px-4 py-3 text-white outline-none ring-0 focus:border-rose-500/40 transition"
-              placeholder="Jane Doe"
+              placeholder="Enter full name"
               required
             />
           </div>
@@ -99,11 +106,13 @@ export default function SignupPage() {
               id="phone"
               type="tel"
               value={phone}
-              onChange={(event) => setPhone(event.target.value)}
+              onChange={(event) => setPhone(event.target.value.replace(/\D/g, '').slice(0, 10))}
               className="w-full rounded-xl border border-white/10 bg-slate-900/60 px-4 py-3 text-white outline-none ring-0 focus:border-rose-500/40 transition"
-              placeholder="(555) 123-4567"
+              placeholder="10-digit mobile number"
+              required
             />
           </div>
+
           <div>
             <label className="mb-2 block text-sm text-slate-300" htmlFor="password">Password</label>
             <input

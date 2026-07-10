@@ -1,8 +1,9 @@
-export const RBAC_ROLES = ['customer', 'manager', 'chef', 'waiter', 'cashier'] as const;
+export const RBAC_ROLES = ['customer', 'owner', 'manager', 'chef', 'waiter', 'cashier'] as const;
 export type Role = (typeof RBAC_ROLES)[number];
 
 export const ROLE_PERMISSIONS: Record<Role, string[]> = {
   customer: ['orders:view', 'orders:create', 'reservations:view', 'reservations:create', 'reviews:create'],
+  owner: ['*'],
   manager: ['*'],
   chef: ['orders:view', 'orders:update', 'orders:items:update'],
   waiter: ['orders:view', 'orders:create', 'orders:update', 'tables:view', 'tables:update', 'reservations:view'],
@@ -19,7 +20,7 @@ export function hasPermission(role: Role | string | null | undefined, permission
 
 export function canAccessRoute(role: Role | string | null | undefined, route: string) {
   const normalizedRole = String(role || '').toLowerCase();
-  if (normalizedRole === 'manager') return true;
+  if (normalizedRole === 'manager' || normalizedRole === 'owner') return true;
   if (normalizedRole === 'customer') {
     return ['customer', 'orders', 'reservations', 'reviews'].some((segment) => route.includes(segment));
   }

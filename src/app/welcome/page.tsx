@@ -47,7 +47,7 @@ export default function WelcomePage() {
         </div>
         <div className="flex items-center gap-2 text-xs font-semibold bg-white/10 backdrop-blur-md border border-white/10 px-4 py-2 rounded-full">
           <Phone className="h-3.5 w-3.5 text-rose-400" />
-          <span>+1 (555) 123-4567</span>
+          <span>+91 98765 43210</span>
         </div>
       </header>
       {/* Hero Content */}

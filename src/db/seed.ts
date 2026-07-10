@@ -4,9 +4,9 @@ import {
   orders, orderItems, suppliers, inventoryItems, purchaseOrders, 
   employeeShifts, payments, coupons, reviews, expenses, chefs, waiters, cashiers 
 } from './schema';
-import { sql } from 'drizzle-orm';
+import { sql, ne } from 'drizzle-orm';
 
-const defaultManagerPasswordHash = '$2b$10$umKJd.rOvMv3mcZPlUySxu9Q8vs4FFDXKM3bsp94KyVAtqZL4SsRu';
+const defaultManagerPasswordHash = '$2b$10$aUqfy97/8m/oubftaA6BOOw19R0sATawPIFFrpf4OOZRizeyyUGHO';
 
 const globalForSeed = globalThis as typeof globalThis & {
   __firstBiteSeedState?: {
@@ -32,7 +32,7 @@ export async function isDatabaseSeeded() {
     const result = await db.select({ count: sql<number>`count(*)` }).from(menuItems);
     const count = Number(result[0]?.count || 0);
     seedState.checked = true;
-    seedState.seeded = count >= 25;
+    seedState.seeded = count > 0;
     return seedState.seeded;
   } catch (error) {
     console.error("Check seed error:", error);
@@ -82,10 +82,22 @@ export async function seedDatabase() {
   await db.delete(cashiers);
   await db.delete(waiters);
   await db.delete(chefs);
-  await db.delete(users);
+  await db.delete(users).where(ne(users.role, 'customer'));
   await db.delete(coupons);
   await db.delete(expenses);
   client.prepare('DELETE FROM sqlite_sequence').run();
+
+  // 1.5 Create the default owner account.
+  await db.insert(users).values({
+    name: 'Owner',
+    email: 'owner@restaurant.com',
+    password: defaultManagerPasswordHash,
+    role: 'owner',
+    loyaltyPoints: 0,
+    isEmailVerified: true,
+    isApproved: true,
+    branch: 'Ichalkaranji',
+  });
 
   // 2. Create the default manager account.
   await db.insert(users).values({
@@ -96,6 +108,7 @@ export async function seedDatabase() {
     loyaltyPoints: 0,
     isEmailVerified: true,
     isApproved: true,
+    branch: 'Ichalkaranji',
   });
 
   const customerAlice = null;
@@ -187,9 +200,9 @@ export async function seedDatabase() {
 
   // 7. Insert Suppliers
   await db.insert(suppliers).values([
-    { name: 'Fresh Fields Produce', contactPerson: 'Gary Green', email: 'gary@freshfields.com', phone: '555-0211', address: '44 Organic Way, Green Valley' },
-    { name: 'Global Meats & Seafood', contactPerson: 'Samantha Catch', email: 'orders@globalmeats.com', phone: '555-0222', address: '10 Dockside Industrial Park' },
-    { name: 'Venezia Italian Dry Goods', contactPerson: 'Giovanni Baker', email: 'giovanni@venezia.com', phone: '555-0233', address: '78 Pasta Blvd, Little Italy' }
+    { name: 'Fresh Fields Produce', contactPerson: 'Gopal Verma', email: 'gopal@freshfields.com', phone: '9823012345', address: '44 Organic Way, Green Valley' },
+    { name: 'Global Meats & Seafood', contactPerson: 'Sanjay Patil', email: 'orders@globalmeats.com', phone: '9123456780', address: '10 Dockside Industrial Park' },
+    { name: 'Venezia Italian Dry Goods', contactPerson: 'Govind Rao', email: 'govind@venezia.com', phone: '9545678901', address: '78 Pasta Blvd, Little Italy' }
   ]);
 
   const seededSuppliers = await db.select().from(suppliers);
@@ -223,9 +236,9 @@ export async function seedDatabase() {
   };
 
   await db.insert(reservations).values([
-    { customerId: null, customerName: 'Alice Smith', customerPhone: '555-0199', tableId: tableT4.id, reservationTime: dateStrAt(2), numberOfGuests: 4, status: 'confirmed', notes: 'Anniversary celebration, prefer window seat' },
-    { customerId: null, customerName: 'Bob Johnson', customerPhone: '555-0188', tableId: tableT1.id, reservationTime: dateStrAt(5), numberOfGuests: 2, status: 'pending', notes: 'Need vegetarian options pointed out' },
-    { customerId: null, customerName: 'Charlotte York', customerPhone: '555-7839', tableId: tableT2.id, reservationTime: dateStrAt(-3), numberOfGuests: 2, status: 'completed', notes: '' }
+    { customerId: null, customerName: 'Amit Sharma', customerPhone: '9876543210', tableId: tableT4.id, reservationTime: dateStrAt(2), numberOfGuests: 4, status: 'confirmed', notes: 'Anniversary celebration, prefer window seat', branch: 'Ichalkaranji' },
+    { customerId: null, customerName: 'Bharat Joshi', customerPhone: '9654321098', tableId: tableT1.id, reservationTime: dateStrAt(5), numberOfGuests: 2, status: 'pending', notes: 'Need vegetarian options pointed out', branch: 'Ichalkaranji' },
+    { customerId: null, customerName: 'Chitra Yadav', customerPhone: '9765432109', tableId: tableT2.id, reservationTime: dateStrAt(-3), numberOfGuests: 2, status: 'completed', notes: '', branch: 'Ichalkaranji' }
   ]);
 
   // 11. Skip seeded employee shifts when no default staff accounts are present.
@@ -249,7 +262,8 @@ export async function seedDatabase() {
     couponCode: 'WELCOME10',
     notes: 'Please make the steak medium-rare, fries extra crispy.',
     createdAt: new Date(Date.now() - 3600000 * 4), // 4 hours ago
-    updatedAt: new Date(Date.now() - 3600000 * 4)
+    updatedAt: new Date(Date.now() - 3600000 * 4),
+    branch: 'Ichalkaranji',
   });
 
   // Order 2 (In Cooking - Chef is preparing this, Table T2)
@@ -264,7 +278,8 @@ export async function seedDatabase() {
     finalAmount: '32.03',
     notes: 'No spicy flakes on Pizza please.',
     createdAt: new Date(Date.now() - 1200000), // 20 mins ago
-    updatedAt: new Date(Date.now() - 1200000)
+    updatedAt: new Date(Date.now() - 1200000),
+    branch: 'Ichalkaranji',
   });
 
   // Order 3 (Pending checkout at Cashier counter)
@@ -279,7 +294,8 @@ export async function seedDatabase() {
     finalAmount: '26.15',
     notes: 'Table 1 requests split bill check.',
     createdAt: new Date(Date.now() - 3000000), // 50 mins ago
-    updatedAt: new Date(Date.now() - 3000000)
+    updatedAt: new Date(Date.now() - 3000000),
+    branch: 'Ichalkaranji',
   });
 
   // Fetch the orders back to get their IDs
@@ -321,9 +337,9 @@ export async function seedDatabase() {
 
   // 13. Insert Reviews
   await db.insert(reviews).values([
-    { menuItemId: menuWagyuBurger.id, customerName: 'Alice Smith', rating: 5, comment: 'Hands down the best Wagyu burger in town! Super juicy.' },
-    { menuItemId: menuMargherita.id, customerName: 'Bob Johnson', rating: 4, comment: 'Very authentic Italian woodfire crust, loved the fresh basil!' },
-    { menuItemId: menuTruffleFries.id, customerName: 'Dave Higgins', rating: 5, comment: 'So addictive. Truffle flavor is intense and amazing.' }
+    { menuItemId: menuWagyuBurger.id, customerName: 'Amit Sharma', rating: 5, comment: 'Hands down the best Wagyu burger in town! Super juicy.' },
+    { menuItemId: menuMargherita.id, customerName: 'Bharat Joshi', rating: 4, comment: 'Very authentic Italian woodfire crust, loved the fresh basil!' },
+    { menuItemId: menuTruffleFries.id, customerName: 'Deepak Hegde', rating: 5, comment: 'So addictive. Truffle flavor is intense and amazing.' }
   ]);
 
   // 14. Insert Expenses

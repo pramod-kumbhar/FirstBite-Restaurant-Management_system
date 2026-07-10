@@ -18,10 +18,11 @@ export async function POST(request: NextRequest) {
       payload = {};
     }
 
-    const { name, email, password: rawPassword, phone } = payload;
+    const { name, email, password: rawPassword, phone, branch } = payload;
     const normalizedEmail = String(email || '').trim().toLowerCase();
     const normalizedName = String(name || '').trim();
     const normalizedRole = 'customer';
+    const normalizedBranch = String(branch || 'Ichalkaranji').trim();
 
     if (!normalizedName || !normalizedEmail || !rawPassword) {
       return NextResponse.json(
@@ -76,6 +77,7 @@ export async function POST(request: NextRequest) {
         isEmailVerified: false,
         isApproved,
         emailVerificationToken: verificationCode,
+        branch: normalizedBranch,
       });
 
       const newUsers = await db

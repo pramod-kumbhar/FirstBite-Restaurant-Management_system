@@ -22,6 +22,7 @@ export const users = sqliteTable('users', {
   passwordResetToken: text('password_reset_token', { length: 255 }),
   passwordResetExpiresAt: integer('password_reset_expires_at', { mode: 'timestamp_ms' }),
   joinedAt: integer('joined_at', { mode: 'timestamp_ms' }).notNull().defaultNow(),
+  branch: text('branch', { length: 100 }).notNull().default('Ichalkaranji'),
 });
 
 // 2. ROLE-SPECIFIC STAFF PROFILES
@@ -97,6 +98,7 @@ export const reservations = sqliteTable('reservations', {
   status: text('status', { length: 30 }).notNull().default('pending'), // 'pending', 'confirmed', 'completed', 'cancelled'
   notes: text('notes'),
   createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().defaultNow(),
+  branch: text('branch', { length: 100 }).notNull().default('Ichalkaranji'),
 });
 
 // 7. ORDERS
@@ -115,6 +117,7 @@ export const orders = sqliteTable('orders', {
   notes: text('notes'),
   createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().defaultNow(),
   updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull().defaultNow(),
+  branch: text('branch', { length: 100 }).notNull().default('Ichalkaranji'),
 });
 
 // 8. ORDER ITEMS

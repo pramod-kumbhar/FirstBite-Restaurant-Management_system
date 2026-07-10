@@ -466,3 +466,54 @@ export function orderConfirmationHtml({
 </body>
 </html>`;
 }
+
+export function employeeInvitationHtml(name: string, role: string, invitationUrl: string, employeeId?: string | number): string {
+  return `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;background:#f4f4f4;font-family:Arial,sans-serif">
+  <table width="100%" cellpadding="0" cellspacing="0">
+    <tr>
+      <td align="center" style="padding:40px 20px">
+        <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08)">
+          <tr>
+            <td style="background:#f43f5e;padding:40px 30px;text-align:center">
+              <h1 style="color:#ffffff;font-size:28px;margin:0">👋 Welcome to FirstBite!</h1>
+              <p style="color:#ffe4e6;font-size:16px;margin:8px 0 0">Hello ${name}</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:40px 30px">
+              <p style="color:#475569;font-size:15px;line-height:1.6;margin:0 0 20px">
+                You have been invited to join the FirstBite Restaurant team as a <strong>${role.toUpperCase()}</strong>.
+              </p>
+              ${employeeId ? `
+              <div style="background:#fff1f2;border:1px solid #fecdd3;border-radius:12px;padding:16px;margin-bottom:20px;text-align:left">
+                <p style="margin:0 0 4px;color:#9f1239;font-size:12px;font-weight:bold;text-transform:uppercase;letter-spacing:0.05em">Verification Details</p>
+                <p style="margin:0;color:#475569;font-size:14px"><strong>Your Employee ID:</strong> <span style="font-family:monospace;font-size:16px;font-weight:bold;color:#111827">${employeeId}</span></p>
+              </div>` : ''}
+              <p style="color:#475569;font-size:15px;line-height:1.6;margin:0 0 20px">
+                To accept this invitation and activate your employee account, please click the button below:
+              </p>
+              <table cellpadding="0" cellspacing="0" style="margin:24px 0">
+                <tr>
+                  <td align="center" style="background:#f43f5e;border-radius:12px;padding:14px 32px">
+                    <a href="${invitationUrl}" style="color:#ffffff;font-size:15px;font-weight:bold;text-decoration:none">
+                      Activate Account
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              <p style="color:#94a3b8;font-size:13px;margin:20px 0 0;border-top:1px solid #e2e8f0;padding-top:20px">
+                If you did not expect this invitation, you can safely ignore this email.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}

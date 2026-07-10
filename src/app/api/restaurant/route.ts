@@ -8,15 +8,15 @@ import {
 import { seedDatabase, ensureDatabaseSeeded } from '@/db/seed';
 import { eq, desc, asc, and, inArray, sql } from 'drizzle-orm';
 import { sendEmail } from '@/lib/email';
-import { hashPassword, verifyToken } from '@/lib/auth';
-import { cashierOrderNotificationHtml, chefOrderNotificationHtml, managerOrderNotificationHtml, orderConfirmationHtml, orderReadyHtml, paymentSuccessHtml, reservationConfirmationHtml, staffApprovalHtml, staffWelcomeEmailHtml, waiterOrderReceivedHtml } from '@/lib/email-templates';
+import { hashPassword, verifyToken, generateVerificationToken } from '@/lib/auth';
+import { cashierOrderNotificationHtml, chefOrderNotificationHtml, managerOrderNotificationHtml, orderConfirmationHtml, orderReadyHtml, paymentSuccessHtml, reservationConfirmationHtml, staffApprovalHtml, staffWelcomeEmailHtml, waiterOrderReceivedHtml, employeeInvitationHtml } from '@/lib/email-templates';
 
 function isCustomerRole(role?: string | null) {
   return String(role || '').toLowerCase() === 'customer';
 }
 
 function isStaffRole(role?: string | null) {
-  return ['chef', 'waiter', 'cashier', 'manager'].includes(String(role || '').toLowerCase());
+  return ['chef', 'waiter', 'cashier', 'manager', 'owner'].includes(String(role || '').toLowerCase());
 }
 
 function getAuthenticatedUser(request: NextRequest) {
@@ -65,7 +65,7 @@ async function notifyStaffForOrder({
       let subject = '';
       const commonData = { name: staff.name || staff.email, orderId, orderType: String(orderType || 'dine-in'), tableNumber, status };
 
-      if (normalizedRole === 'manager') {
+      if (normalizedRole === 'manager' || normalizedRole === 'owner') {
         subject = `🔔 Order #${orderId} status update`;
         html = managerOrderNotificationHtml(commonData as any);
       } else if (normalizedRole === 'cashier') {
@@ -243,23 +243,23 @@ export async function POST(request: NextRequest) {
 
     const userRole = String(authUser.role || '').toLowerCase();
     const managerOnlyActions = new Set(['seed', 'saveMenuItem', 'deleteMenuItem', 'saveCategory', 'deleteCategory', 'saveTable', 'deleteTable', 'saveSupplier', 'deleteSupplier', 'saveInventory', 'deleteInventory', 'createPurchaseOrder', 'receivePurchaseOrder', 'deletePurchaseOrder', 'saveShift', 'deleteShift', 'saveExpense', 'deleteExpense', 'saveUser', 'deleteUser', 'approveStaff', 'saveStaffMember', 'deleteStaffMember']);
-    if (managerOnlyActions.has(action) && userRole !== 'manager') {
+    if (managerOnlyActions.has(action) && !['manager', 'owner'].includes(userRole)) {
       return NextResponse.json({ success: false, error: 'Manager access required' }, { status: 403 });
     }
 
-    if (['updateOrderStatus', 'updateOrderItemStatus', 'forwardToChef'].includes(action) && !['manager', 'chef', 'waiter', 'cashier'].includes(userRole)) {
+    if (['updateOrderStatus', 'updateOrderItemStatus', 'forwardToChef'].includes(action) && !['manager', 'owner', 'chef', 'waiter', 'cashier'].includes(userRole)) {
       return NextResponse.json({ success: false, error: 'Staff access required' }, { status: 403 });
     }
 
-    if (action === 'processPayment' && !['manager', 'cashier', 'waiter'].includes(userRole)) {
+    if (action === 'processPayment' && !['manager', 'owner', 'cashier', 'waiter'].includes(userRole)) {
       return NextResponse.json({ success: false, error: 'Payment access required' }, { status: 403 });
     }
 
-    if (action === 'placeOrder' && !['customer', 'manager', 'waiter', 'cashier'].includes(userRole)) {
+    if (action === 'placeOrder' && !['customer', 'manager', 'owner', 'waiter', 'cashier'].includes(userRole)) {
       return NextResponse.json({ success: false, error: 'Order access required' }, { status: 403 });
     }
 
-    if (action === 'saveReservation' && !['customer', 'manager', 'waiter'].includes(userRole)) {
+    if (action === 'saveReservation' && !['customer', 'manager', 'owner', 'waiter'].includes(userRole)) {
       return NextResponse.json({ success: false, error: 'Reservation access required' }, { status: 403 });
     }
 
@@ -347,16 +347,20 @@ export async function POST(request: NextRequest) {
 
     // 5. SAVE RESERVATION
     if (action === 'saveReservation') {
-      const { id, customerId, customerName, customerPhone, tableId, reservationTime, numberOfGuests, status, notes } = payload;
+      const { id, customerId, customerName, customerPhone, tableId, reservationTime, numberOfGuests, status, notes, branch, isPaidOnline, paymentMethod } = payload;
       
       const parsedTime = new Date(reservationTime);
       const normalizedStatus = status || 'pending';
 
       if (id) {
         await db.update(reservations)
-          .set({ customerId, customerName, customerPhone, tableId, reservationTime: parsedTime, numberOfGuests, status: normalizedStatus, notes })
+          .set({ customerId, customerName, customerPhone, tableId, reservationTime: parsedTime, numberOfGuests, status: normalizedStatus, notes, branch: branch || 'Ichalkaranji' })
           .where(eq(reservations.id, id));
       } else {
+        const notesStr = isPaidOnline && paymentMethod
+          ? `${notes || ''} [Online Deposit Paid: ₹500.00 via ${paymentMethod.toUpperCase()} (Txn: TXN-RES-${Date.now()})]`
+          : notes;
+
         await db.insert(reservations).values({
           customerId: customerId || (authUser && isCustomerRole(authUser.role) ? authUser.userId : null),
           customerName,
@@ -365,8 +369,20 @@ export async function POST(request: NextRequest) {
           reservationTime: parsedTime,
           numberOfGuests,
           status: normalizedStatus,
-          notes
+          notes: notesStr,
+          branch: branch || 'Ichalkaranji'
         });
+
+        if (isPaidOnline && paymentMethod) {
+          await db.insert(payments).values({
+            orderId: null,
+            amount: '500.00',
+            paymentMethod: paymentMethod,
+            status: 'completed',
+            transactionId: `TXN-RES-${Math.floor(10000000 + Math.random() * 90000000)}`,
+            createdAt: new Date()
+          });
+        }
       }
 
       // If reserving, optionally change table status
@@ -432,7 +448,7 @@ export async function POST(request: NextRequest) {
     if (action === 'placeOrder') {
       await ensureDatabaseSeeded();
 
-      const { customerId, customerEmail, customerName, tableId, orderType, address, items, notes, couponCode, discountAmount, totalAmount, finalAmount, gstAmount } = payload;
+      const { customerId, customerEmail, customerName, tableId, orderType, address, items, notes, couponCode, discountAmount, totalAmount, finalAmount, gstAmount, branch, isPaidOnline, paymentMethod } = payload;
       const normalizedItems = Array.isArray(items) ? items : [];
 
       if (normalizedItems.length === 0) {
@@ -466,6 +482,10 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: false, error: 'Selected table is no longer available. Please refresh and choose a table again.' }, { status: 400 });
       }
       
+      const orderNotes = isPaidOnline && paymentMethod
+        ? `${notes || ''} [Paid Online: ₹${finalAmount} via ${paymentMethod.toUpperCase()} (Txn: TXN-${Date.now()})]`
+        : notes || '';
+
       // 1. Create Order
       const insertResult = await db.insert(orders).values({
         customerId: resolvedCustomerId,
@@ -478,9 +498,10 @@ export async function POST(request: NextRequest) {
         discountAmount: String(discountAmount || 0),
         finalAmount: String(finalAmount),
         couponCode: couponCode || null,
-        notes: notes || '',
+        notes: orderNotes,
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
+        branch: branch || 'Ichalkaranji'
       }).returning({ id: orders.id });
 
       const orderId = insertResult[0]?.id;
@@ -496,6 +517,18 @@ export async function POST(request: NextRequest) {
           status: 'pending'
         }));
         await db.insert(orderItems).values(itemValues);
+      }
+
+      // 2.5. Insert Online Payment transaction
+      if (isPaidOnline && orderId && paymentMethod) {
+        await db.insert(payments).values({
+          orderId,
+          amount: String(finalAmount),
+          paymentMethod,
+          status: 'completed',
+          transactionId: `TXN-${Math.floor(10000000 + Math.random() * 90000000)}`,
+          createdAt: new Date()
+        });
       }
 
       // 3. Update table status to occupied if dine-in
@@ -594,6 +627,13 @@ export async function POST(request: NextRequest) {
         .set({ status, updatedAt: new Date() })
         .where(eq(orders.id, id));
 
+      if (status === 'completed') {
+        const oData = await db.select().from(orders).where(eq(orders.id, id));
+        if (oData[0] && oData[0].tableId) {
+          await db.update(restaurantTables).set({ status: 'available' }).where(eq(restaurantTables.id, oData[0].tableId));
+        }
+      }
+
       const orderData = await db.select().from(orders).where(eq(orders.id, id));
       const currentOrder = orderData[0];
       if (currentOrder) {
@@ -688,6 +728,40 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true });
     }
 
+    // 6.c UPDATE ORDER ITEM STATUS (Triggered by waiter menu serve tracking)
+    if (action === 'updateOrderItemStatus') {
+      const { id, status } = payload;
+      const targetItem = (await db.select().from(orderItems).where(eq(orderItems.id, id)))[0];
+      if (targetItem) {
+        await db.update(orderItems).set({ status }).where(eq(orderItems.id, id));
+        
+        // If all items are served, auto-update the parent order to served
+        const parentId = targetItem.orderId;
+        if (parentId) {
+          const allItems = await db.select().from(orderItems).where(eq(orderItems.orderId, parentId));
+          const allServed = allItems.every((item: any) => item.status === 'served');
+          if (allServed) {
+            await db.update(orders).set({ status: 'served', updatedAt: new Date() }).where(eq(orders.id, parentId));
+            
+            // Also notify staff
+            const orderData = await db.select().from(orders).where(eq(orders.id, parentId));
+            const currentOrder = orderData[0];
+            if (currentOrder) {
+              const tableInfo = currentOrder.tableId ? (await db.select().from(restaurantTables).where(eq(restaurantTables.id, currentOrder.tableId)))[0] : null;
+              await notifyStaffForOrder({
+                orderId: parentId,
+                orderType: currentOrder.orderType,
+                tableNumber: tableInfo?.tableNumber,
+                status: 'served',
+                roles: ['manager', 'waiter', 'cashier', 'chef'],
+              });
+            }
+          }
+        }
+      }
+      return NextResponse.json({ success: true });
+    }
+
     if (action === 'approveStaff') {
       const { id, isApproved } = payload;
       await db.update(users).set({ isApproved }).where(eq(users.id, id));
@@ -712,33 +786,33 @@ export async function POST(request: NextRequest) {
       }
 
       let resolvedUserId = userId ?? null;
-      if (!resolvedUserId && name && email && password) {
-        const hashedPassword = await hashPassword(password);
+      if (!resolvedUserId && name && email) {
+        const token = generateVerificationToken();
         const insertResult = await db.insert(users).values({
           name,
           email,
-          password: hashedPassword,
+          password: 'PENDING_ACTIVATION',
           phone: phone || null,
           role: normalizedRole,
           loyaltyPoints: 0,
-          isApproved: true,
-          isEmailVerified: true,
+          isApproved: false,
+          isEmailVerified: false,
+          emailVerificationToken: token,
         }).returning({ id: users.id });
         resolvedUserId = Number(insertResult[0]?.id || 0);
 
         if (resolvedUserId) {
-          const loginUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/staff-login`;
-          await sendEmail({
-            to: email,
-            subject: `Welcome to FirstBite as ${normalizedRole}`,
-            html: staffWelcomeEmailHtml({
-              name,
-              role: normalizedRole,
-              email,
-              password,
-              loginUrl,
-            }),
-          });
+          const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+          const invitationUrl = `${appUrl}/verify-invitation?token=${token}`;
+          try {
+            await sendEmail({
+              to: email,
+              subject: '📩 FirstBite Employee Invitation',
+              html: employeeInvitationHtml(name, normalizedRole, invitationUrl, resolvedUserId),
+            });
+          } catch (emailErr) {
+            console.error('Failed to send employee invitation email from saveStaffMember:', emailErr);
+          }
         }
       }
 
@@ -997,13 +1071,44 @@ export async function POST(request: NextRequest) {
 
     // 14. SAVE CUSTOMER/STAFF USER
     if (action === 'saveUser') {
-      const { id, name, email, phone, role, pin, loyaltyPoints } = payload;
+      const { id, name, email, phone, role, pin, loyaltyPoints, branch } = payload;
       if (id) {
         await db.update(users)
-          .set({ name, email, phone, role, pin, loyaltyPoints })
+          .set({ name, email, phone, role, pin, loyaltyPoints, branch: branch || 'Ichalkaranji' })
           .where(eq(users.id, id));
       } else {
-        await db.insert(users).values({ name, email, phone, role, pin, loyaltyPoints });
+        if (isStaffRole(role)) {
+          const token = generateVerificationToken();
+          const insertResult = await db.insert(users).values({
+            name,
+            email,
+            phone,
+            role,
+            pin,
+            loyaltyPoints: loyaltyPoints || 0,
+            isEmailVerified: false,
+            isApproved: false,
+            password: 'PENDING_ACTIVATION',
+            emailVerificationToken: token,
+            branch: branch || 'Ichalkaranji'
+          }).returning({ id: users.id });
+
+          const insertedId = insertResult[0]?.id;
+          const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+          const invitationUrl = `${appUrl}/verify-invitation?token=${token}`;
+
+          try {
+            await sendEmail({
+              to: email,
+              subject: '📩 FirstBite Employee Invitation',
+              html: employeeInvitationHtml(name, role, invitationUrl, insertedId),
+            });
+          } catch (emailErr) {
+            console.error('Failed to send employee invitation email:', emailErr);
+          }
+        } else {
+          await db.insert(users).values({ name, email, phone, role, pin, loyaltyPoints, branch: branch || 'Ichalkaranji' });
+        }
       }
       return NextResponse.json({ success: true });
     }

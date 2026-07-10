@@ -47,7 +47,7 @@ const requiredForeignKeys: Record<string, string[]> = {
 
 const defaultManager = {
   email: "manager@restaurant.com",
-  passwordHash: "$2b$10$umKJd.rOvMv3mcZPlUySxu9Q8vs4FFDXKM3bsp94KyVAtqZL4SsRu",
+  passwordHash: "$2b$10$aUqfy97/8m/oubftaA6BOOw19R0sATawPIFFrpf4OOZRizeyyUGHO",
 };
 
 function tableExists(tableName: string) {
@@ -125,6 +125,7 @@ function ensureSchema() {
       email_verified_at INTEGER,
       password_reset_token TEXT,
       password_reset_expires_at INTEGER,
+      branch TEXT NOT NULL DEFAULT 'Ichalkaranji',
       joined_at INTEGER NOT NULL DEFAULT (cast((julianday('now') - 2440587.5) * 86400000 as integer))
     );
 
@@ -195,6 +196,7 @@ function ensureSchema() {
       number_of_guests INTEGER NOT NULL,
       status TEXT NOT NULL DEFAULT 'pending',
       notes TEXT,
+      branch TEXT NOT NULL DEFAULT 'Ichalkaranji',
       created_at INTEGER NOT NULL DEFAULT (cast((julianday('now') - 2440587.5) * 86400000 as integer))
     );
 
@@ -211,6 +213,7 @@ function ensureSchema() {
       coupon_code TEXT,
       address TEXT,
       notes TEXT,
+      branch TEXT NOT NULL DEFAULT 'Ichalkaranji',
       created_at INTEGER NOT NULL DEFAULT (cast((julianday('now') - 2440587.5) * 86400000 as integer)),
       updated_at INTEGER NOT NULL DEFAULT (cast((julianday('now') - 2440587.5) * 86400000 as integer))
     );
@@ -330,7 +333,8 @@ function ensureDefaultManager() {
         role,
         loyalty_points,
         is_email_verified,
-        is_approved
+        is_approved,
+        branch
       )
       VALUES (
         'Manager',
@@ -339,19 +343,60 @@ function ensureDefaultManager() {
         'manager',
         0,
         1,
-        1
+        1,
+        'Ichalkaranji'
       )
       ON CONFLICT(email) DO UPDATE SET
         name = 'Manager',
         password = excluded.password,
         role = 'manager',
         is_email_verified = 1,
-        is_approved = 1
+        is_approved = 1,
+        branch = 'Ichalkaranji'
     `)
     .run(defaultManager);
 }
 
+function ensureDefaultOwner() {
+  const defaultOwner = {
+    email: 'owner@restaurant.com',
+    passwordHash: '$2b$10$aUqfy97/8m/oubftaA6BOOw19R0sATawPIFFrpf4OOZRizeyyUGHO', // hash for password123
+  };
+  client
+    .prepare(`
+      INSERT INTO users (
+        name,
+        email,
+        password,
+        role,
+        loyalty_points,
+        is_email_verified,
+        is_approved,
+        branch
+      )
+      VALUES (
+        'Owner',
+        @email,
+        @passwordHash,
+        'owner',
+        0,
+        1,
+        1,
+        'Ichalkaranji'
+      )
+      ON CONFLICT(email) DO UPDATE SET
+        name = 'Owner',
+        password = excluded.password,
+        role = 'owner',
+        is_email_verified = 1,
+        is_approved = 1,
+        branch = 'Ichalkaranji'
+    `)
+    .run(defaultOwner);
+}
+
 ensureSchema();
 ensureDefaultManager();
+ensureDefaultOwner();
 
 export { client, db };

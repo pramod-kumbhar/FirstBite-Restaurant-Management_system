@@ -19,3 +19,6 @@ coverage/
 data/*.db
 data/*.db-shm
 data/*.db-wal
+local.db
+*.db-shm
+*.db-wal

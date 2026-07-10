@@ -5,6 +5,7 @@ import { Suspense, useEffect, useState } from 'react';
 import { ArrowLeft, ChefHat, CircleDollarSign, UserCog, Users } from 'lucide-react';
 
 const roleLabels: Record<string, string> = {
+  owner: 'Owner',
   manager: 'Manager',
   chef: 'Chef',
   waiter: 'Waiter',
@@ -75,7 +76,7 @@ function StaffLoginForm() {
         </div>
 
         <h2 className="text-3xl font-extrabold text-white text-center mb-1">Staff Access</h2>
-        <p className="text-slate-300 text-sm text-center mb-6">Sign in as manager, chef, waiter, or cashier</p>
+        <p className="text-slate-300 text-sm text-center mb-6">Sign in as owner or operational staff</p>
 
         <div className="mb-6 flex flex-wrap gap-2 justify-center">
           {Object.entries(roleLabels).map(([value, label]) => (
