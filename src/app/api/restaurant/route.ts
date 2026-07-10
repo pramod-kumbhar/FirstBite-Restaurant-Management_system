@@ -265,7 +265,7 @@ export async function POST(request: NextRequest) {
 
     // 1. SEED / RESET DATABASE
     if (action === 'seed') {
-      await seedDatabase();
+      await seedDatabase(true);
       return NextResponse.json({ success: true, message: "Database reset and seeded with demo data" });
     }
 

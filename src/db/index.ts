@@ -1,34 +1,51 @@
 import { mkdirSync } from "node:fs";
 import { dirname, isAbsolute, join } from "node:path";
 import Database from "better-sqlite3";
-import { drizzle } from "drizzle-orm/better-sqlite3";
+import { drizzle as drizzleSqlite } from "drizzle-orm/better-sqlite3";
+import { drizzle as drizzleLibsql } from "drizzle-orm/libsql";
+import { createClient } from "@libsql/client";
 import * as schema from "./schema";
 
-const sqlitePath = process.env.SQLITE_PATH || "data/restaurant.db";
-const resolvedSqlitePath = sqlitePath === ":memory:" || isAbsolute(sqlitePath)
-  ? sqlitePath
-  : join(process.cwd(), sqlitePath);
+const isTurso = !!process.env.TURSO_CONNECTION_URL;
 
-if (resolvedSqlitePath !== ":memory:") {
-  mkdirSync(dirname(resolvedSqlitePath), { recursive: true });
-}
+let db: any;
+let client: any;
 
 const globalForDb = globalThis as typeof globalThis & {
   __firstBiteSqliteClient?: Database.Database;
+  __firstBiteLibsqlClient?: any;
+  __firstBiteDbInitialized?: boolean;
 };
 
-const client =
-  globalForDb.__firstBiteSqliteClient ??
-  new Database(resolvedSqlitePath);
+if (isTurso) {
+  const libsqlClient = globalForDb.__firstBiteLibsqlClient ?? createClient({
+    url: process.env.TURSO_CONNECTION_URL!,
+    authToken: process.env.TURSO_AUTH_TOKEN,
+  });
+  if (process.env.NODE_ENV !== "production") {
+    globalForDb.__firstBiteLibsqlClient = libsqlClient;
+  }
+  client = libsqlClient;
+  db = drizzleLibsql(libsqlClient, { schema });
+} else {
+  const sqlitePath = process.env.SQLITE_PATH || "data/restaurant.db";
+  const resolvedSqlitePath = sqlitePath === ":memory:" || isAbsolute(sqlitePath)
+    ? sqlitePath
+    : join(process.cwd(), sqlitePath);
 
-client.pragma("foreign_keys = ON");
-client.pragma("journal_mode = WAL");
+  if (resolvedSqlitePath !== ":memory:") {
+    mkdirSync(dirname(resolvedSqlitePath), { recursive: true });
+  }
 
-if (process.env.NODE_ENV !== "production") {
-  globalForDb.__firstBiteSqliteClient = client;
+  const localClient = globalForDb.__firstBiteSqliteClient ?? new Database(resolvedSqlitePath);
+  localClient.pragma("foreign_keys = ON");
+  localClient.pragma("journal_mode = WAL");
+  if (process.env.NODE_ENV !== "production") {
+    globalForDb.__firstBiteSqliteClient = localClient;
+  }
+  client = localClient;
+  db = drizzleSqlite(localClient, { schema });
 }
-
-const db = drizzle(client, { schema });
 
 const requiredForeignKeys: Record<string, string[]> = {
   chefs: ["user_id", "manager_id"],
@@ -45,25 +62,34 @@ const requiredForeignKeys: Record<string, string[]> = {
   reviews: ["menu_item_id"],
 };
 
-const defaultManager = {
-  email: "manager@restaurant.com",
-  passwordHash: "$2b$10$aUqfy97/8m/oubftaA6BOOw19R0sATawPIFFrpf4OOZRizeyyUGHO",
-};
-
-function tableExists(tableName: string) {
-  const result = client
-    .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?")
-    .get(tableName);
-  return Boolean(result);
+async function tableExists(tableName: string): Promise<boolean> {
+  if (isTurso) {
+    const result = await client.execute({
+      sql: "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?",
+      args: [tableName],
+    });
+    return result.rows.length > 0;
+  } else {
+    const result = client
+      .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?")
+      .get(tableName);
+    return Boolean(result);
+  }
 }
 
-function schemaNeedsRebuild() {
+async function schemaNeedsRebuild(): Promise<boolean> {
   for (const [tableName, columns] of Object.entries(requiredForeignKeys)) {
-    if (!tableExists(tableName)) {
+    if (!(await tableExists(tableName))) {
       continue;
     }
 
-    const foreignKeys = client.prepare(`PRAGMA foreign_key_list(${tableName})`).all() as Array<{ from: string }>;
+    let foreignKeys: Array<{ from: string }>;
+    if (isTurso) {
+      const result = await client.execute(`PRAGMA foreign_key_list(${tableName})`);
+      foreignKeys = result.rows.map((row: any) => ({ from: row.from }));
+    } else {
+      foreignKeys = client.prepare(`PRAGMA foreign_key_list(${tableName})`).all() as Array<{ from: string }>;
+    }
     const foreignKeyColumns = new Set(foreignKeys.map((foreignKey) => foreignKey.from));
 
     for (const column of columns) {
@@ -76,8 +102,8 @@ function schemaNeedsRebuild() {
   return false;
 }
 
-function dropSchema() {
-  client.exec(`
+async function dropSchema() {
+  const sqlStr = `
     DROP TABLE IF EXISTS reviews;
     DROP TABLE IF EXISTS payments;
     DROP TABLE IF EXISTS order_items;
@@ -96,16 +122,21 @@ function dropSchema() {
     DROP TABLE IF EXISTS users;
     DROP TABLE IF EXISTS coupons;
     DROP TABLE IF EXISTS expenses;
-  `);
+  `;
+  if (isTurso) {
+    await client.executeMultiple(sqlStr);
+  } else {
+    client.exec(sqlStr);
+  }
 }
 
-function ensureSchema() {
-  if (schemaNeedsRebuild()) {
-    console.warn("SQLite schema is missing required foreign keys. Rebuilding local SQLite tables.");
-    dropSchema();
+async function ensureSchema() {
+  if (await schemaNeedsRebuild()) {
+    console.warn("SQLite schema is missing required foreign keys. Rebuilding local tables.");
+    await dropSchema();
   }
 
-  client.exec(`
+  const sqlStr = `
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
@@ -150,7 +181,7 @@ function ensureSchema() {
     CREATE TABLE IF NOT EXISTS cashiers (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
-      manager_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+      manager_id REFERENCES users(id) ON DELETE SET NULL,
       status TEXT NOT NULL DEFAULT 'active',
       shift_preference TEXT,
       joined_at INTEGER NOT NULL DEFAULT (cast((julianday('now') - 2440587.5) * 86400000 as integer))
@@ -306,9 +337,9 @@ function ensureSchema() {
       created_by TEXT,
       created_at INTEGER NOT NULL DEFAULT (cast((julianday('now') - 2440587.5) * 86400000 as integer))
     );
-  `);
+  `;
 
-  client.exec(`
+  const indicesStr = `
     CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
     CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
     CREATE INDEX IF NOT EXISTS idx_menu_items_category_id ON menu_items(category_id);
@@ -320,83 +351,105 @@ function ensureSchema() {
     CREATE INDEX IF NOT EXISTS idx_reservations_reservation_time ON reservations(reservation_time DESC);
     CREATE INDEX IF NOT EXISTS idx_payments_created_at ON payments(created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_employee_shifts_date ON employee_shifts(date);
-  `);
+  `;
+
+  if (isTurso) {
+    await client.executeMultiple(sqlStr);
+    await client.executeMultiple(indicesStr);
+  } else {
+    client.exec(sqlStr);
+    client.exec(indicesStr);
+  }
 }
 
-function ensureDefaultManager() {
-  client
-    .prepare(`
-      INSERT INTO users (
-        name,
-        email,
-        password,
-        role,
-        loyalty_points,
-        is_email_verified,
-        is_approved,
-        branch
-      )
-      VALUES (
-        'Manager',
-        @email,
-        @passwordHash,
-        'manager',
-        0,
-        1,
-        1,
-        'Ichalkaranji'
-      )
-      ON CONFLICT(email) DO UPDATE SET
-        name = 'Manager',
-        password = excluded.password,
-        role = 'manager',
-        is_email_verified = 1,
-        is_approved = 1,
-        branch = 'Ichalkaranji'
-    `)
-    .run(defaultManager);
+async function ensureDefaultManager() {
+  const sqlStr = `
+    INSERT INTO users (
+      name,
+      email,
+      password,
+      role,
+      loyalty_points,
+      is_email_verified,
+      is_approved,
+      branch
+    )
+    VALUES (
+      'Manager',
+      'manager@restaurant.com',
+      '$2b$10$aUqfy97/8m/oubftaA6BOOw19R0sATawPIFFrpf4OOZRizeyyUGHO',
+      'manager',
+      0,
+      1,
+      1,
+      'Ichalkaranji'
+    )
+    ON CONFLICT(email) DO UPDATE SET
+      name = 'Manager',
+      password = excluded.password,
+      role = 'manager',
+      is_email_verified = 1,
+      is_approved = 1,
+      branch = 'Ichalkaranji'
+  `;
+
+  if (isTurso) {
+    await client.execute(sqlStr);
+  } else {
+    client.prepare(sqlStr).run();
+  }
 }
 
-function ensureDefaultOwner() {
-  const defaultOwner = {
-    email: 'owner@restaurant.com',
-    passwordHash: '$2b$10$aUqfy97/8m/oubftaA6BOOw19R0sATawPIFFrpf4OOZRizeyyUGHO', // hash for password123
-  };
-  client
-    .prepare(`
-      INSERT INTO users (
-        name,
-        email,
-        password,
-        role,
-        loyalty_points,
-        is_email_verified,
-        is_approved,
-        branch
-      )
-      VALUES (
-        'Owner',
-        @email,
-        @passwordHash,
-        'owner',
-        0,
-        1,
-        1,
-        'Ichalkaranji'
-      )
-      ON CONFLICT(email) DO UPDATE SET
-        name = 'Owner',
-        password = excluded.password,
-        role = 'owner',
-        is_email_verified = 1,
-        is_approved = 1,
-        branch = 'Ichalkaranji'
-    `)
-    .run(defaultOwner);
+async function ensureDefaultOwner() {
+  const sqlStr = `
+    INSERT INTO users (
+      name,
+      email,
+      password,
+      role,
+      loyalty_points,
+      is_email_verified,
+      is_approved,
+      branch
+    )
+    VALUES (
+      'Owner',
+      'owner@restaurant.com',
+      '$2b$10$aUqfy97/8m/oubftaA6BOOw19R0sATawPIFFrpf4OOZRizeyyUGHO',
+      'owner',
+      0,
+      1,
+      1,
+      'Ichalkaranji'
+    )
+    ON CONFLICT(email) DO UPDATE SET
+      name = 'Owner',
+      password = excluded.password,
+      role = 'owner',
+      is_email_verified = 1,
+      is_approved = 1,
+      branch = 'Ichalkaranji'
+  `;
+
+  if (isTurso) {
+    await client.execute(sqlStr);
+  } else {
+    client.prepare(sqlStr).run();
+  }
 }
 
-ensureSchema();
-ensureDefaultManager();
-ensureDefaultOwner();
+// Background database initialization
+const initPromise = (async () => {
+  if (globalForDb.__firstBiteDbInitialized) return;
+  try {
+    await ensureSchema();
+    await ensureDefaultManager();
+    await ensureDefaultOwner();
+    globalForDb.__firstBiteDbInitialized = true;
+    console.log(isTurso ? "Turso Cloud Database initialized successfully." : "Local SQLite Database initialized successfully.");
+  } catch (err) {
+    console.error("Database initialization failed:", err);
+  }
+})();
 
-export { client, db };
+export { client, db, initPromise };

@@ -20,5 +20,7 @@ data/*.db
 data/*.db-shm
 data/*.db-wal
 local.db
+auth
+auth-wal
 *.db-shm
 *.db-wal
