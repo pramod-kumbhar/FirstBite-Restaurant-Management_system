@@ -9,8 +9,8 @@ function VerifyInvitationForm() {
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(() => !!token);
+  const [error, setError] = useState(() => !token ? 'Invalid or missing invitation token.' : '');
   const [invitedUser, setInvitedUser] = useState<{ name: string; email: string; role: string } | null>(null);
 
   // Form states
@@ -22,11 +22,7 @@ function VerifyInvitationForm() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!token) {
-      setError('Invalid or missing invitation token.');
-      setLoading(false);
-      return;
-    }
+    if (!token) return;
 
     async function loadInvitation() {
       try {

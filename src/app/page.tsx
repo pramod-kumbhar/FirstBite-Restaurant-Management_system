@@ -13,7 +13,7 @@ export default function HomePage() {
     const loadUser = async () => {
       const token = window.localStorage.getItem('authToken');
       if (!token) {
-        router.replace('/welcome');
+        router.replace('/login');
         return;
       }
 
@@ -24,14 +24,14 @@ export default function HomePage() {
         const result = await res.json();
         if (!result.success || !result.user) {
           window.localStorage.removeItem('authToken');
-          router.replace('/welcome');
+          router.replace('/login');
           return;
         }
 
         setUser(result.user);
       } catch {
         window.localStorage.removeItem('authToken');
-        router.replace('/welcome');
+        router.replace('/login');
       } finally {
         setLoading(false);
       }

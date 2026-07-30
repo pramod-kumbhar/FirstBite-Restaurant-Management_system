@@ -53,6 +53,15 @@ export const cashiers = sqliteTable('cashiers', {
   joinedAt: integer('joined_at', { mode: 'timestamp_ms' }).notNull().defaultNow(),
 });
 
+export const deliveryBoys = sqliteTable('delivery_boys', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull().unique(),
+  managerId: integer('manager_id').references(() => users.id, { onDelete: 'set null' }),
+  status: text('status', { length: 30 }).notNull().default('active'),
+  vehicleType: text('vehicle_type', { length: 50 }).default('Bike'),
+  joinedAt: integer('joined_at', { mode: 'timestamp_ms' }).notNull().defaultNow(),
+});
+
 // 3. CATEGORIES
 export const categories = sqliteTable('categories', {
   id: integer('id').primaryKey({ autoIncrement: true }),

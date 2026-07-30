@@ -7,6 +7,8 @@ import { createClient } from "@libsql/client";
 import * as schema from "./schema";
 
 const isTurso = !!process.env.TURSO_CONNECTION_URL;
+const defaultManagerPasswordHash = "$2b$10$lodaOzPpCdSW.fg.0aSEh.Vq7Lhk4zO91trkI.R3/KLEl9siyqJr2";
+const defaultOwnerPasswordHash = "$2b$10$4sLLnHCaUlxFT35Siw2TEOvqiCQu.QHLDPP6j1rZ1ebXG5x6eoT3y";
 
 let db: any;
 let client: any;
@@ -184,6 +186,15 @@ async function ensureSchema() {
       manager_id REFERENCES users(id) ON DELETE SET NULL,
       status TEXT NOT NULL DEFAULT 'active',
       shift_preference TEXT,
+      joined_at INTEGER NOT NULL DEFAULT (cast((julianday('now') - 2440587.5) * 86400000 as integer))
+    );
+
+    CREATE TABLE IF NOT EXISTS delivery_boys (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+      manager_id REFERENCES users(id) ON DELETE SET NULL,
+      status TEXT NOT NULL DEFAULT 'active',
+      vehicle_type TEXT DEFAULT 'Bike',
       joined_at INTEGER NOT NULL DEFAULT (cast((julianday('now') - 2440587.5) * 86400000 as integer))
     );
 
@@ -377,7 +388,7 @@ async function ensureDefaultManager() {
     VALUES (
       'Manager',
       'manager@restaurant.com',
-      '$2b$10$aUqfy97/8m/oubftaA6BOOw19R0sATawPIFFrpf4OOZRizeyyUGHO',
+      '${defaultManagerPasswordHash}',
       'manager',
       0,
       1,
@@ -415,7 +426,7 @@ async function ensureDefaultOwner() {
     VALUES (
       'Owner',
       'owner@restaurant.com',
-      '$2b$10$aUqfy97/8m/oubftaA6BOOw19R0sATawPIFFrpf4OOZRizeyyUGHO',
+      '${defaultOwnerPasswordHash}',
       'owner',
       0,
       1,
@@ -438,6 +449,44 @@ async function ensureDefaultOwner() {
   }
 }
 
+async function ensureDefaultDelivery() {
+  const sqlStr = `
+    INSERT INTO users (
+      name,
+      email,
+      password,
+      role,
+      loyalty_points,
+      is_email_verified,
+      is_approved,
+      branch
+    )
+    VALUES (
+      'Rider Vikram',
+      'delivery@restaurant.com',
+      '${defaultManagerPasswordHash}',
+      'delivery',
+      0,
+      1,
+      1,
+      'Ichalkaranji'
+    )
+    ON CONFLICT(email) DO UPDATE SET
+      name = 'Rider Vikram',
+      password = excluded.password,
+      role = 'delivery',
+      is_email_verified = 1,
+      is_approved = 1,
+      branch = 'Ichalkaranji'
+  `;
+
+  if (isTurso) {
+    await client.execute(sqlStr);
+  } else {
+    client.prepare(sqlStr).run();
+  }
+}
+
 // Background database initialization
 const initPromise = (async () => {
   if (globalForDb.__firstBiteDbInitialized) return;
@@ -445,6 +494,7 @@ const initPromise = (async () => {
     await ensureSchema();
     await ensureDefaultManager();
     await ensureDefaultOwner();
+    await ensureDefaultDelivery();
     globalForDb.__firstBiteDbInitialized = true;
     console.log(isTurso ? "Turso Cloud Database initialized successfully." : "Local SQLite Database initialized successfully.");
   } catch (err) {

@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/db';
+import { db, initPromise } from '@/db';
 import { users } from '@/db/schema';
 import { verifyToken } from '@/lib/auth';
 import { eq } from 'drizzle-orm';
 
 export async function GET(request: NextRequest) {
   try {
+    await initPromise;
+
     const authHeader = request.headers.get('authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json({ success: false, error: 'Not authenticated' }, { status: 401 });
@@ -32,6 +34,7 @@ export async function GET(request: NextRequest) {
         email: user.email,
         role: user.role,
         phone: user.phone,
+        branch: user.branch || 'Ichalkaranji',
         addressLine: user.addressLine || '',
         district: user.district || '',
         state: user.state || '',

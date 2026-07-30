@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/db';
+import { db, initPromise } from '@/db';
 import { users } from '@/db/schema';
 import { hashPassword, verifyPassword, signToken } from '@/lib/auth';
 import { eq } from 'drizzle-orm';
 
 export async function POST(request: NextRequest) {
   try {
+    await initPromise;
+
     let payload: any = {};
     try {
       const rawBody = await request.text();
@@ -38,6 +40,7 @@ export async function POST(request: NextRequest) {
           password: users.password,
           role: users.role,
           phone: users.phone,
+          branch: users.branch,
           loyaltyPoints: users.loyaltyPoints,
           isEmailVerified: users.isEmailVerified,
           isApproved: users.isApproved,
@@ -61,6 +64,7 @@ export async function POST(request: NextRequest) {
             email: normalizedEmail,
             role: 'customer',
             phone: null,
+            branch: 'Ichalkaranji',
             loyaltyPoints: 100,
             isEmailVerified: true,
             password: fallbackPasswordHash,
@@ -73,6 +77,7 @@ export async function POST(request: NextRequest) {
           email: normalizedEmail,
           role: 'customer',
           phone: null,
+          branch: 'Ichalkaranji',
           loyaltyPoints: 100,
           isEmailVerified: true,
           password: await hashPassword(password),
@@ -87,9 +92,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (user.role !== requestedRole) {
+    if (requestedRole && requestedRole !== 'any' && user.role !== requestedRole) {
       return NextResponse.json(
-        { success: false, error: `This account is not registered for the ${requestedRole} login.` },
+        { success: false, error: `This account is registered as ${user.role}. Please sign in with the correct role.` },
         { status: 403 }
       );
     }
@@ -127,6 +132,7 @@ export async function POST(request: NextRequest) {
         email: user.email,
         role: user.role,
         phone: user.phone,
+        branch: user.branch || 'Ichalkaranji',
         loyaltyPoints: user.loyaltyPoints,
         isEmailVerified: user.isEmailVerified,
         isApproved: user.isApproved,

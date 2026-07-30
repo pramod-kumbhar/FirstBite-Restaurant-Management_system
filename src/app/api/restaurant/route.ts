@@ -3,7 +3,7 @@ import { db } from '@/db';
 import { 
   users, categories, menuItems, restaurantTables, reservations, 
   orders, orderItems, suppliers, inventoryItems, purchaseOrders, 
-  employeeShifts, payments, coupons, reviews, expenses, chefs, waiters, cashiers 
+  employeeShifts, payments, coupons, reviews, expenses, chefs, waiters, cashiers, deliveryBoys 
 } from '@/db/schema';
 import { seedDatabase, ensureDatabaseSeeded } from '@/db/seed';
 import { eq, desc, asc, and, inArray, sql } from 'drizzle-orm';
@@ -16,7 +16,7 @@ function isCustomerRole(role?: string | null) {
 }
 
 function isStaffRole(role?: string | null) {
-  return ['chef', 'waiter', 'cashier', 'manager', 'owner'].includes(String(role || '').toLowerCase());
+  return ['chef', 'waiter', 'cashier', 'delivery', 'manager', 'owner'].includes(String(role || '').toLowerCase());
 }
 
 function getAuthenticatedUser(request: NextRequest) {
@@ -152,6 +152,7 @@ export async function GET(request: NextRequest) {
           chefs: [],
           waiters: [],
           cashiers: [],
+          deliveryBoys: [],
         }
       });
     }
@@ -175,6 +176,7 @@ export async function GET(request: NextRequest) {
       allChefs,
       allWaiters,
       allCashiers,
+      allDeliveryBoys,
     ] = await Promise.all([
       db.select().from(categories).orderBy(asc(categories.name)),
       db.select().from(menuItems).orderBy(asc(menuItems.name)),
@@ -194,6 +196,7 @@ export async function GET(request: NextRequest) {
       db.select().from(chefs).orderBy(asc(chefs.id)),
       db.select().from(waiters).orderBy(asc(waiters.id)),
       db.select().from(cashiers).orderBy(asc(cashiers.id)),
+      db.select().from(deliveryBoys).orderBy(asc(deliveryBoys.id)),
     ]);
 
     return NextResponse.json({
@@ -217,6 +220,7 @@ export async function GET(request: NextRequest) {
         chefs: allChefs,
         waiters: allWaiters,
         cashiers: allCashiers,
+        deliveryBoys: allDeliveryBoys,
       }
     });
   } catch (error: any) {
@@ -242,13 +246,18 @@ export async function POST(request: NextRequest) {
     }
 
     const userRole = String(authUser.role || '').toLowerCase();
-    const managerOnlyActions = new Set(['seed', 'saveMenuItem', 'deleteMenuItem', 'saveCategory', 'deleteCategory', 'saveTable', 'deleteTable', 'saveSupplier', 'deleteSupplier', 'saveInventory', 'deleteInventory', 'createPurchaseOrder', 'receivePurchaseOrder', 'deletePurchaseOrder', 'saveShift', 'deleteShift', 'saveExpense', 'deleteExpense', 'saveUser', 'deleteUser', 'approveStaff', 'saveStaffMember', 'deleteStaffMember']);
+    const ownerOnlyActions = new Set(['seed', 'saveUser', 'deleteUser']);
+    if (ownerOnlyActions.has(action) && userRole !== 'owner') {
+      return NextResponse.json({ success: false, error: 'Owner access required' }, { status: 403 });
+    }
+
+    const managerOnlyActions = new Set(['saveMenuItem', 'deleteMenuItem', 'saveCategory', 'deleteCategory', 'saveTable', 'deleteTable', 'saveSupplier', 'deleteSupplier', 'saveInventory', 'deleteInventory', 'createPurchaseOrder', 'receivePurchaseOrder', 'deletePurchaseOrder', 'saveShift', 'deleteShift', 'saveExpense', 'deleteExpense', 'approveStaff', 'saveStaffMember', 'deleteStaffMember', 'saveCoupon', 'deleteCoupon', 'deleteReservation']);
     if (managerOnlyActions.has(action) && !['manager', 'owner'].includes(userRole)) {
       return NextResponse.json({ success: false, error: 'Manager access required' }, { status: 403 });
     }
 
-    if (['updateOrderStatus', 'updateOrderItemStatus', 'forwardToChef'].includes(action) && !['manager', 'owner', 'chef', 'waiter', 'cashier'].includes(userRole)) {
-      return NextResponse.json({ success: false, error: 'Staff access required' }, { status: 403 });
+    if (['updateOrderStatus', 'updateOrderItemStatus', 'forwardToChef'].includes(action) && !['customer', 'manager', 'owner', 'chef', 'waiter', 'cashier', 'delivery'].includes(userRole)) {
+      return NextResponse.json({ success: false, error: 'Authorization required for order update' }, { status: 403 });
     }
 
     if (action === 'processPayment' && !['manager', 'owner', 'cashier', 'waiter'].includes(userRole)) {
@@ -482,22 +491,63 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: false, error: 'Selected table is no longer available. Please refresh and choose a table again.' }, { status: 400 });
       }
       
+      // 1. Calculate Authoritative Prices on Server (Do not trust client monetary inputs)
+      let calculatedSubtotal = 0;
+      const itemValues = normalizedItems.map((item: any) => {
+        const dbItem = existingMenuItems.find((m: any) => Number(m.id) === Number(item.menuItemId));
+        const unitPrice = parseFloat(dbItem?.price || '0');
+        const qty = Math.max(1, Number(item.quantity) || 1);
+        calculatedSubtotal += unitPrice * qty;
+        return {
+          menuItemId: Number(item.menuItemId),
+          quantity: qty,
+          unitPrice: unitPrice.toFixed(2),
+          notes: item.notes || '',
+          status: 'pending'
+        };
+      });
+
+      // 2. Validate Coupon & Discount Server-Side
+      let calculatedDiscount = 0;
+      let validCouponCode: string | null = null;
+      if (couponCode && typeof couponCode === 'string' && couponCode.trim()) {
+        const dbCoupons = await db.select().from(coupons).where(eq(coupons.code, couponCode.trim().toUpperCase()));
+        const dbCoupon = dbCoupons[0];
+        if (dbCoupon && dbCoupon.isActive) {
+          const minSpend = parseFloat(dbCoupon.minOrderAmount || '0');
+          if (calculatedSubtotal >= minSpend) {
+            validCouponCode = dbCoupon.code;
+            if (dbCoupon.discountType === 'percentage') {
+              calculatedDiscount = (calculatedSubtotal * parseFloat(dbCoupon.discountValue)) / 100;
+            } else {
+              calculatedDiscount = parseFloat(dbCoupon.discountValue);
+            }
+            calculatedDiscount = Math.min(calculatedSubtotal, Math.max(0, calculatedDiscount));
+          }
+        }
+      }
+
+      const taxableAmount = Math.max(0, calculatedSubtotal - calculatedDiscount);
+      const calculatedGst = Math.round(taxableAmount * 0.05 * 100) / 100; // 5% GST
+      const calculatedFinalAmount = Math.round((taxableAmount + calculatedGst) * 100) / 100;
+
       const orderNotes = isPaidOnline && paymentMethod
-        ? `${notes || ''} [Paid Online: ₹${finalAmount} via ${paymentMethod.toUpperCase()} (Txn: TXN-${Date.now()})]`
+        ? `${notes || ''} [Paid Online: ₹${calculatedFinalAmount.toFixed(2)} via ${paymentMethod.toUpperCase()} (Txn: TXN-${Date.now()})]`
         : notes || '';
 
-      // 1. Create Order
+      // 3. Create Order
       const insertResult = await db.insert(orders).values({
         customerId: resolvedCustomerId,
         tableId: resolvedTableId,
         orderType: orderType || 'dine-in',
         address: address || null,
         status: 'pending',
-        totalAmount: String(totalAmount),
-        gstAmount: String(gstAmount || 0),
-        discountAmount: String(discountAmount || 0),
-        finalAmount: String(finalAmount),
-        couponCode: couponCode || null,
+        paymentMethod: paymentMethod || (orderType === 'dine-in' ? 'counter_billing' : 'cod'),
+        totalAmount: calculatedSubtotal.toFixed(2),
+        gstAmount: calculatedGst.toFixed(2),
+        discountAmount: calculatedDiscount.toFixed(2),
+        finalAmount: calculatedFinalAmount.toFixed(2),
+        couponCode: validCouponCode,
         notes: orderNotes,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -506,49 +556,44 @@ export async function POST(request: NextRequest) {
 
       const orderId = insertResult[0]?.id;
 
-      // 2. Add Order Items
+      // 4. Add Order Items
       if (normalizedItems.length > 0 && orderId) {
-        const itemValues = normalizedItems.map((item: any) => ({
-          orderId: orderId,
-          menuItemId: Number(item.menuItemId),
-          quantity: item.quantity,
-          unitPrice: String(item.price),
-          notes: item.notes || '',
-          status: 'pending'
+        const orderItemValues = itemValues.map((iv: any) => ({
+          ...iv,
+          orderId: orderId
         }));
-        await db.insert(orderItems).values(itemValues);
+        await db.insert(orderItems).values(orderItemValues);
       }
 
-      // 2.5. Insert Online Payment transaction
+      // 4.5. Insert Online Payment transaction
       if (isPaidOnline && orderId && paymentMethod) {
         await db.insert(payments).values({
           orderId,
-          amount: String(finalAmount),
+          amount: calculatedFinalAmount.toFixed(2),
           paymentMethod,
           status: 'completed',
-          transactionId: `TXN-${Math.floor(10000000 + Math.random() * 90000000)}`,
+          transactionId: `TXN_REALTIME_${paymentMethod.toUpperCase()}_${Math.floor(10000000 + Math.random() * 90000000)}`,
           createdAt: new Date()
         });
       }
 
-      // 3. Update table status to occupied if dine-in
+      // 5. Update table status to occupied if dine-in
       if (resolvedTableId && orderType === 'dine-in') {
         await db.update(restaurantTables).set({ status: 'occupied' }).where(eq(restaurantTables.id, resolvedTableId));
       }
 
-      // 4. Award loyalty points if customer ID provided
+      // 6. Award loyalty points if customer ID provided
       if (resolvedCustomerId) {
-        const pointsEarned = Math.floor(Number(finalAmount) / 10); // 1 point per ₹10 spent
+        const pointsEarned = Math.floor(calculatedFinalAmount / 10); // 1 point per ₹10 spent
         await db.update(users)
           .set({ loyaltyPoints: sql`loyalty_points + ${pointsEarned}` })
           .where(eq(users.id, resolvedCustomerId));
       }
 
-      // 5. Send order confirmation email (non-blocking - fire and forget)
+      // 7. Send order confirmation email (non-blocking)
       if (orderId && normalizedItems.length > 0) {
         (async () => {
           try {
-            // Look up user to get email
             let resolvedCustomerEmail: string | undefined = customerEmail;
             let resolvedCustomerName: string | undefined = customerName;
             if (resolvedCustomerId) {
@@ -560,22 +605,19 @@ export async function POST(request: NextRequest) {
               }
             }
 
-            // If we have an email, send the confirmation
             if (resolvedCustomerEmail && resolvedCustomerName) {
-              // Look up menu item names
               const itemDetails = await Promise.all(
                 normalizedItems.map(async (item: any) => {
                   const menuItem = await db.select().from(menuItems).where(eq(menuItems.id, Number(item.menuItemId)));
                   return {
                     name: menuItem[0]?.name || 'Unknown Item',
                     quantity: item.quantity,
-                    price: item.price,
+                    price: menuItem[0]?.price || item.price,
                     notes: item.notes || '',
                   };
                 })
               );
 
-              // Calculate max prep time
               const allMenuItems = await db.select().from(menuItems);
               const maxPrepTime = normalizedItems.reduce((max: number, item: any) => {
                 const mi = allMenuItems.find((m: any) => Number(m.id) === Number(item.menuItemId));
@@ -592,10 +634,10 @@ export async function POST(request: NextRequest) {
                   name: resolvedCustomerName,
                   orderId,
                   items: itemDetails,
-                  totalAmount: String(totalAmount || '0'),
-                  finalAmount: String(finalAmount || '0'),
-                  gstAmount: String(gstAmount || '0'),
-                  discountAmount: String(discountAmount || '0'),
+                  totalAmount: calculatedSubtotal.toFixed(2),
+                  finalAmount: calculatedFinalAmount.toFixed(2),
+                  gstAmount: calculatedGst.toFixed(2),
+                  discountAmount: calculatedDiscount.toFixed(2),
                   orderType: orderType || 'dine-in',
                   tableNumber: tableInfo[0]?.tableNumber,
                   estimatedTime: maxPrepTime + 5,
@@ -616,16 +658,67 @@ export async function POST(request: NextRequest) {
         })();
       }
 
-      return NextResponse.json({ success: true, orderId });
+      return NextResponse.json({
+        success: true,
+        orderId,
+        totals: {
+          subtotal: calculatedSubtotal.toFixed(2),
+          discountAmount: calculatedDiscount.toFixed(2),
+          gstAmount: calculatedGst.toFixed(2),
+          finalAmount: calculatedFinalAmount.toFixed(2)
+        }
+      });
     }
 
-    // 7. UPDATE ORDER STATUS (Chef, Waiter, Cashier, Manager)
+    // 8. UPDATE ORDER STATUS (Role Authorization & State Transition Machine)
     if (action === 'updateOrderStatus') {
-      const { id, status } = payload; // 'pending', 'accepted', 'cooking', 'ready', 'served', 'completed', 'cancelled'
-      
+      const { id, status } = payload;
+      const targetOrderId = Number(id);
+
+      const existingOrderList = await db.select().from(orders).where(eq(orders.id, targetOrderId));
+      const existingOrder = existingOrderList[0];
+      if (!existingOrder) {
+        return NextResponse.json({ success: false, error: 'Order not found' }, { status: 404 });
+      }
+
+      // Customer authorization check
+      if (userRole === 'customer') {
+        if (status !== 'cancelled') {
+          return NextResponse.json({ success: false, error: 'Customers are only permitted to cancel pending orders.' }, { status: 403 });
+        }
+        if (existingOrder.customerId !== authUser.userId) {
+          return NextResponse.json({ success: false, error: 'Unauthorized: You cannot modify another customer\'s order.' }, { status: 403 });
+        }
+        if (existingOrder.status !== 'pending') {
+          return NextResponse.json({ success: false, error: 'Order can only be cancelled while in pending status.' }, { status: 400 });
+        }
+      }
+
+      // Role & Status transition validation
+      const allowedTransitions: Record<string, string[]> = {
+        pending: ['accepted', 'cancelled'],
+        accepted: ['cooking', 'cancelled'],
+        cooking: ['ready', 'cancelled'],
+        ready: ['served', 'out_for_delivery', 'completed', 'cancelled'],
+        served: ['completed'],
+        out_for_delivery: ['completed'],
+        completed: [],
+        cancelled: []
+      };
+
+      const isAdminRole = ['owner', 'manager', 'cashier'].includes(userRole);
+      const validNextStatuses = allowedTransitions[existingOrder.status] || [];
+
+      if (!isAdminRole && !validNextStatuses.includes(status)) {
+        return NextResponse.json({
+          success: false,
+          error: `Invalid status transition from '${existingOrder.status}' to '${status}'.`
+        }, { status: 400 });
+      }
+
       await db.update(orders)
         .set({ status, updatedAt: new Date() })
-        .where(eq(orders.id, id));
+        .where(eq(orders.id, targetOrderId));
 
       if (status === 'completed') {
         const oData = await db.select().from(orders).where(eq(orders.id, id));
@@ -777,9 +870,9 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === 'saveStaffMember') {
-      const { id, role, userId, managerId, status, specialization, section, shiftPreference, name, email, phone, password } = payload;
+      const { id, role, userId, managerId, status, specialization, section, shiftPreference, vehicleType, name, email, phone, password } = payload;
       const normalizedRole = String(role || '').toLowerCase();
-      const targetTable = normalizedRole === 'chef' ? chefs : normalizedRole === 'waiter' ? waiters : normalizedRole === 'cashier' ? cashiers : null;
+      const targetTable = normalizedRole === 'chef' ? chefs : normalizedRole === 'waiter' ? waiters : normalizedRole === 'cashier' ? cashiers : normalizedRole === 'delivery' ? deliveryBoys : null;
 
       if (!targetTable) {
         return NextResponse.json({ success: false, error: 'Invalid staff role' }, { status: 400 });
@@ -827,6 +920,7 @@ export async function POST(request: NextRequest) {
         specialization: specialization || null,
         section: section || null,
         shiftPreference: shiftPreference || null,
+        vehicleType: vehicleType || 'Bike',
       };
 
       if (id) {
@@ -836,6 +930,8 @@ export async function POST(request: NextRequest) {
           await db.update(waiters).set(recordPayload).where(eq(waiters.id, id));
         } else if (normalizedRole === 'cashier') {
           await db.update(cashiers).set(recordPayload).where(eq(cashiers.id, id));
+        } else if (normalizedRole === 'delivery') {
+          await db.update(deliveryBoys).set(recordPayload).where(eq(deliveryBoys.id, id));
         }
       } else {
         if (normalizedRole === 'chef') {
@@ -844,6 +940,8 @@ export async function POST(request: NextRequest) {
           await db.insert(waiters).values(recordPayload);
         } else if (normalizedRole === 'cashier') {
           await db.insert(cashiers).values(recordPayload);
+        } else if (normalizedRole === 'delivery') {
+          await db.insert(deliveryBoys).values(recordPayload);
         }
       }
 
@@ -858,6 +956,8 @@ export async function POST(request: NextRequest) {
         await db.delete(waiters).where(eq(waiters.id, id));
       } else if (role === 'cashier') {
         await db.delete(cashiers).where(eq(cashiers.id, id));
+      } else if (role === 'delivery') {
+        await db.delete(deliveryBoys).where(eq(deliveryBoys.id, id));
       }
       return NextResponse.json({ success: true });
     }

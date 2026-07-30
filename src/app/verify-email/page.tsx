@@ -8,10 +8,10 @@ import { ArrowLeft } from 'lucide-react';
 function VerifyEmailContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(() => searchParams.get('email') || '');
   const [codeDigits, setCodeDigits] = useState<string[]>(Array(6).fill(''));
-  const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
-  const [message, setMessage] = useState('Enter your email and the OTP code sent to you.');
+  const [status, setStatus] = useState<'idle' | 'success' | 'error'>(() => searchParams.get('message') ? 'success' : 'idle');
+  const [message, setMessage] = useState(() => searchParams.get('message') || 'Enter your email and the OTP code sent to you.');
   const [loading, setLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
@@ -37,20 +37,6 @@ function VerifyEmailContent() {
       inputRefs.current[index - 1]?.focus();
     }
   };
-
-  useEffect(() => {
-    const emailParam = searchParams.get('email');
-    const messageParam = searchParams.get('message');
-
-    if (emailParam) {
-      setEmail(emailParam);
-    }
-
-    if (messageParam) {
-      setMessage(messageParam);
-      setStatus('success');
-    }
-  }, [searchParams]);
 
   const handleVerify = async (event: React.FormEvent) => {
     event.preventDefault();

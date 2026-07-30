@@ -185,7 +185,7 @@ export default function AccountSettingsPage() {
                   <input
                     value={form.phone}
                     onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-rose-500"
+                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder:text-black placeholder-black outline-none transition focus:border-rose-500"
                     placeholder="Mobile number"
                   />
                 </label>
@@ -194,7 +194,7 @@ export default function AccountSettingsPage() {
                   <input
                     value={form.pincode}
                     onChange={(e) => setForm({ ...form, pincode: e.target.value })}
-                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-rose-500"
+                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder:text-black placeholder-black outline-none transition focus:border-rose-500"
                     placeholder="Postal code"
                   />
                 </label>
@@ -206,7 +206,7 @@ export default function AccountSettingsPage() {
                   <input
                     value={form.addressLine}
                     onChange={(e) => setForm({ ...form, addressLine: e.target.value })}
-                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-rose-500"
+                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder:text-black placeholder-black outline-none transition focus:border-rose-500"
                     placeholder="Street, apartment, landmark"
                   />
                 </label>
@@ -217,7 +217,7 @@ export default function AccountSettingsPage() {
                     <input
                       value={form.district}
                       onChange={(e) => setForm({ ...form, district: e.target.value })}
-                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-rose-500"
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder:text-black placeholder-black outline-none transition focus:border-rose-500"
                       placeholder="District"
                     />
                   </label>
@@ -226,7 +226,7 @@ export default function AccountSettingsPage() {
                     <input
                       value={form.state}
                       onChange={(e) => setForm({ ...form, state: e.target.value })}
-                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-rose-500"
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder:text-black placeholder-black outline-none transition focus:border-rose-500"
                       placeholder="State"
                     />
                   </label>
