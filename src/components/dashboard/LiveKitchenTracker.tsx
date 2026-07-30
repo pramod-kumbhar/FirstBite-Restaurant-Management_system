@@ -69,9 +69,9 @@ export function LiveKitchenTracker({
 
       {/* Progress Timeline */}
       {!isCancelled ? (
-        <div className="py-2">
-          <div className="grid grid-cols-5 gap-1 relative">
-            {steps.map((step, idx) => {
+        <div className="py-2 overflow-x-auto">
+          <div className="grid grid-cols-5 gap-1 min-w-[280px] relative">
+            {steps.map((step) => {
               const StepIcon = step.icon;
               const stepIndex = statusOrder.indexOf(step.key);
               const isDone = currentIndex >= stepIndex && currentIndex !== -1;
@@ -80,17 +80,17 @@ export function LiveKitchenTracker({
               return (
                 <div key={step.key} className="flex flex-col items-center text-center space-y-1 z-10">
                   <div
-                    className={`h-9 w-9 rounded-2xl flex items-center justify-center font-bold text-xs transition-all border ${
+                    className={`h-7 w-7 sm:h-9 sm:w-9 rounded-xl sm:rounded-2xl flex items-center justify-center font-bold text-xs transition-all border ${
                       isCurrent
-                        ? 'bg-rose-600 text-white border-rose-400 ring-4 ring-rose-500/30 scale-110 shadow-lg'
+                        ? 'bg-rose-600 text-white border-rose-400 ring-2 sm:ring-4 ring-rose-500/30 scale-105 sm:scale-110 shadow-lg'
                         : isDone
                         ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                        : 'bg-slate-950 text-slate-600 border-white/10'
+                        : 'bg-slate-955 text-slate-600 border-white/10'
                     }`}
                   >
-                    <StepIcon className="h-4 w-4" />
+                    <StepIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   </div>
-                  <span className={`text-[10px] font-bold uppercase tracking-wider ${isCurrent ? 'text-rose-300' : isDone ? 'text-emerald-400' : 'text-slate-500'}`}>
+                  <span className={`text-[8px] sm:text-[10px] font-extrabold uppercase tracking-tight sm:tracking-wider leading-tight ${isCurrent ? 'text-rose-300' : isDone ? 'text-emerald-400' : 'text-slate-500'}`}>
                     {step.label}
                   </span>
                 </div>

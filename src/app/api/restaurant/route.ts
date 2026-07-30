@@ -288,11 +288,24 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === 'saveMyProfile') {
-      const { name, phone, addressLine, district, state, pincode } = payload;
+      const { name, phone, addressLine, district, state, pincode, password } = payload;
+      const updateData: any = {};
+      if (name) updateData.name = name;
+      if (phone) updateData.phone = phone;
+      if (addressLine !== undefined) updateData.addressLine = addressLine;
+      if (district !== undefined) updateData.district = district;
+      if (state !== undefined) updateData.state = state;
+      if (pincode !== undefined) updateData.pincode = pincode;
+
+      if (password && String(password).trim().length >= 6) {
+        const bcrypt = await import('bcryptjs');
+        updateData.password = await bcrypt.hash(String(password).trim(), 10);
+      }
+
       await db.update(users)
-        .set({ name, phone, addressLine, district, state, pincode })
+        .set(updateData)
         .where(eq(users.id, authUser.userId));
-      return NextResponse.json({ success: true, message: 'Profile updated successfully.' });
+      return NextResponse.json({ success: true, message: 'Profile & security settings updated successfully.' });
     }
 
     // 2. CREATE / UPDATE MENU ITEM

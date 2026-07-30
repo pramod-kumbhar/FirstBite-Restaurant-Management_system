@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
@@ -14,10 +14,18 @@ export const metadata: Metadata = {
   description: "Full-stack restaurant management system with Next.js, Drizzle, and real-time operations.",
 };
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: "#020617",
+};
+
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className={plusJakartaSans.variable}>
-      <body className="min-h-screen bg-slate-950 text-white antialiased font-sans selection:bg-rose-500 selection:text-white">
+      <body className="min-h-screen bg-slate-950 text-white antialiased font-sans selection:bg-rose-500 selection:text-white overflow-x-hidden">
         {children}
       </body>
     </html>
