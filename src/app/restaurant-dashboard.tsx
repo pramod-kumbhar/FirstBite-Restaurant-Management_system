@@ -708,7 +708,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                 <Link href="/signup" className="rounded-full border border-white/20 px-5 py-1.5 font-semibold text-white transition hover:bg-white/10">Create account</Link>
               </div>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-1.5.5">
+            <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4 sm:p-5">
               <h2 className="text-xl font-semibold">Why teams love it</h2>
               <ul className="mt-4 space-y-3 text-sm text-slate-300">
                 <li>• Real-time table and order tracking</li>
@@ -2981,7 +2981,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
 
             {/* SIDE CART DRAWER (Only visible on Browse Menu Tab and if isCartOpen is true) */}
             {activeCustomerTab === 'browse' && isCartOpen && (
-              <div className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-slate-950/95 border-l border-white/10 shadow-2xl p-2 sm:p-1.5.5 overflow-y-auto flex flex-col backdrop-blur-2xl transition-all duration-300 transform translate-x-0" id="mobile-checkout">
+              <div className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-slate-950/95 border-l border-white/10 shadow-2xl p-2 sm:p-4 sm:p-5 overflow-y-auto flex flex-col backdrop-blur-2xl transition-all duration-300 transform translate-x-0" id="mobile-checkout">
                 <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-4">
                   <h3 className="text-base font-extrabold text-white flex items-center gap-2">
                     <ShoppingCart className="h-5 w-5 text-rose-500" /> Shopping Cart
@@ -3678,19 +3678,19 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
           <div className="flex-1 flex flex-col lg:flex-row">
             
             {/* Sidebar Navigation */}
-            <aside className="w-full lg:w-64 bg-slate-900 text-slate-300 shrink-0 flex flex-col">
-              <div className="p-2 border-b border-slate-800">
+            <aside className="w-full lg:w-64 bg-slate-900/90 border border-white/10 rounded-2xl lg:rounded-3xl p-3 text-slate-300 shrink-0 flex flex-col mb-4 lg:mb-0 shadow-xl">
+              <div className="pb-3 mb-2 border-b border-white/10 hidden lg:block">
                 <p className="text-[10px] font-extrabold uppercase tracking-wider text-rose-500">
                   {currentRole === 'owner' ? 'Owner Control Panel' : 'Administrator Panel'}
                 </p>
-                <p className="text-xs text-slate-400 mt-1 font-medium">Logged in: {currentUser?.role ? currentUser.role.charAt(0).toUpperCase() + currentUser.role.slice(1) : 'Customer'} ({displayName})</p>
+                <p className="text-xs text-slate-400 mt-1 font-medium truncate">Logged in: {currentUser?.role ? currentUser.role.charAt(0).toUpperCase() + currentUser.role.slice(1) : 'Customer'} ({displayName})</p>
               </div>
 
-              <nav className="p-2 space-y-1 flex-1">
+              <nav className="flex lg:flex-col overflow-x-auto lg:overflow-visible gap-1.5 p-1 no-scrollbar shrink-0">
                 {currentRole === 'owner' && (
                   <button
                     onClick={() => setActiveManagerTab('control-center')}
-                    className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2.5 ${activeManagerTab === 'control-center' ? 'bg-rose-600 text-white' : 'hover:bg-slate-800 text-slate-300'}`}
+                    className={`whitespace-nowrap px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 ${activeManagerTab === 'control-center' ? 'bg-rose-600 text-white shadow-md' : 'hover:bg-slate-800 text-slate-300'}`}
                   >
                     <ShieldCheck className="h-4 w-4" /> Control Center
                   </button>
@@ -3698,7 +3698,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                 {hasAccessToTab(currentRole, 'overview') && (
                   <button
                     onClick={() => setActiveManagerTab('overview')}
-                    className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2.5 ${activeManagerTab === 'overview' ? 'bg-rose-600 text-white' : 'hover:bg-slate-800 text-slate-300'}`}
+                    className={`whitespace-nowrap px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 ${activeManagerTab === 'overview' ? 'bg-rose-600 text-white shadow-md' : 'hover:bg-slate-800 text-slate-300'}`}
                   >
                     <TrendingUp className="h-4 w-4" /> Financial Overview & Stats
                   </button>
@@ -3706,18 +3706,16 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                 {hasAccessToTab(currentRole, 'payments') && (
                   <button
                     onClick={() => setActiveManagerTab('payments')}
-                    className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-between ${activeManagerTab === 'payments' ? 'bg-rose-600 text-white' : 'hover:bg-slate-800 text-slate-300'}`}
+                    className={`whitespace-nowrap px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 ${activeManagerTab === 'payments' ? 'bg-rose-600 text-white shadow-md' : 'hover:bg-slate-800 text-slate-300'}`}
                   >
-                    <span className="flex items-center gap-2.5">
-                      <CreditCard className="h-4 w-4" /> Real-Time Payments Hub
-                    </span>
+                    <CreditCard className="h-4 w-4" /> Real-Time Payments Hub
                     <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
                   </button>
                 )}
                 {hasAccessToTab(currentRole, 'menu') && (
                   <button
                     onClick={() => setActiveManagerTab('menu')}
-                    className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2.5 ${activeManagerTab === 'menu' ? 'bg-rose-600 text-white' : 'hover:bg-slate-800 text-slate-300'}`}
+                    className={`whitespace-nowrap px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 ${activeManagerTab === 'menu' ? 'bg-rose-600 text-white shadow-md' : 'hover:bg-slate-800 text-slate-300'}`}
                   >
                     <Utensils className="h-4 w-4" /> Menu Items CRUD
                   </button>
@@ -3725,7 +3723,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                 {hasAccessToTab(currentRole, 'inventory') && (
                   <button
                     onClick={() => setActiveManagerTab('inventory')}
-                    className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2.5 ${activeManagerTab === 'inventory' ? 'bg-rose-600 text-white' : 'hover:bg-slate-800 text-slate-300'}`}
+                    className={`whitespace-nowrap px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 ${activeManagerTab === 'inventory' ? 'bg-rose-600 text-white shadow-md' : 'hover:bg-slate-800 text-slate-300'}`}
                   >
                     <Layers className="h-4 w-4" /> Inventory & Low Stock
                   </button>
@@ -3733,7 +3731,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                 {hasAccessToTab(currentRole, 'shifts') && (
                   <button
                     onClick={() => setActiveManagerTab('shifts')}
-                    className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2.5 ${activeManagerTab === 'shifts' ? 'bg-rose-600 text-white' : 'hover:bg-slate-800 text-slate-300'}`}
+                    className={`whitespace-nowrap px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 ${activeManagerTab === 'shifts' ? 'bg-rose-600 text-white shadow-md' : 'hover:bg-slate-800 text-slate-300'}`}
                   >
                     <Calendar className="h-4 w-4" /> Employees & Shifts
                   </button>
@@ -3741,7 +3739,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                 {hasAccessToTab(currentRole, 'reservations') && (
                   <button
                     onClick={() => setActiveManagerTab('reservations')}
-                    className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2.5 ${activeManagerTab === 'reservations' ? 'bg-rose-600 text-white' : 'hover:bg-slate-800 text-slate-300'}`}
+                    className={`whitespace-nowrap px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 ${activeManagerTab === 'reservations' ? 'bg-rose-600 text-white shadow-md' : 'hover:bg-slate-800 text-slate-300'}`}
                   >
                     <Users className="h-4 w-4" /> Table Reservations
                   </button>
@@ -3749,7 +3747,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                 {hasAccessToTab(currentRole, 'expenses') && (
                   <button
                     onClick={() => setActiveManagerTab('expenses')}
-                    className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2.5 ${activeManagerTab === 'expenses' ? 'bg-rose-600 text-white' : 'hover:bg-slate-800 text-slate-300'}`}
+                    className={`whitespace-nowrap px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 ${activeManagerTab === 'expenses' ? 'bg-rose-600 text-white shadow-md' : 'hover:bg-slate-800 text-slate-300'}`}
                   >
                     <DollarSign className="h-4 w-4" /> Expense Tracking
                   </button>
@@ -3757,30 +3755,30 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                 {hasAccessToTab(currentRole, 'coupons') && (
                   <button
                     onClick={() => setActiveManagerTab('coupons')}
-                    className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2.5 ${activeManagerTab === 'coupons' ? 'bg-rose-600 text-white' : 'hover:bg-slate-800 text-slate-300'}`}
+                    className={`whitespace-nowrap px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 ${activeManagerTab === 'coupons' ? 'bg-rose-600 text-white shadow-md' : 'hover:bg-slate-800 text-slate-300'}`}
                   >
                     <Ticket className="h-4 w-4" /> Coupons & Promo Codes
                   </button>
                 )}
                 <button
                   onClick={() => setCurrentRole('delivery')}
-                  className="w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2.5 hover:bg-slate-800 text-rose-300 border border-rose-500/20 bg-rose-500/10 mt-2"
+                  className="whitespace-nowrap px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 text-rose-300 border border-rose-500/20 bg-rose-500/10 shrink-0"
                 >
                   <Truck className="h-4 w-4 text-rose-400" /> Live Delivery Terminal
                 </button>
               </nav>
 
               {/* Database Quick Stats */}
-              <div className="p-2 border-t border-slate-800 text-[11px] space-y-2 text-slate-400">
-                <div className="flex justify-between">
+              <div className="mt-3 pt-3 border-t border-white/10 text-[11px] space-y-1.5 text-slate-400 hidden lg:block">
+                <div className="flex justify-between items-center">
                   <span>Categories count:</span>
                   <span className="text-white font-bold">{data.categories.length}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between items-center">
                   <span>Total orders recorded:</span>
                   <span className="text-white font-bold">{data.orders.length}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between items-center">
                   <span>Active staff:</span>
                   <span className="text-white font-bold">{data.users.filter((u: any) => u.role !== 'customer').length}</span>
                 </div>
@@ -3788,7 +3786,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
             </aside>
 
             {/* Manager Content Container */}
-            <main className="flex-1 p-2 md:p-1.5.5 overflow-y-auto">
+            <main className="flex-1 p-2 md:p-4 sm:p-5 overflow-y-auto">
               
               {!hasAccessToTab(currentRole, activeManagerTab) ? (
                 <div className="bg-slate-900/60 backdrop-blur-md border border-white/5 p-2 rounded-3xl text-center space-y-2 max-w-md mx-auto my-12">
@@ -5019,7 +5017,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                       const maxRevenue = Math.max(...branches.map(b => getBranchStats(b).revenue), 100);
 
                       return (
-                        <div className="bg-slate-950/40 backdrop-blur-md border border-white/5 p-2.5 sm:p-1.5.5 rounded-3xl shadow-xl space-y-3 text-left">
+                        <div className="bg-slate-950/40 backdrop-blur-md border border-white/5 p-2.5 sm:p-4 sm:p-5 rounded-3xl shadow-xl space-y-3 text-left">
                           <div>
                             <h2 className="text-lg font-black text-white flex items-center gap-2">
                               <Globe className="h-5 w-5 text-rose-500 animate-pulse" /> Branch Performance & Revenue Analytics
@@ -5717,7 +5715,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
 
                   {/* Visual Sales Charts (Custom CSS/SVG Bars) */}
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                    <div className="bg-slate-900/60 border border-white/5 p-1.5.5 rounded-3xl text-slate-100">
+                    <div className="bg-slate-900/60 border border-white/5 p-4 sm:p-5 rounded-3xl text-slate-100">
                       <h3 className="text-sm font-extrabold mb-4 uppercase tracking-wider text-slate-400">Revenue Contribution by Category</h3>
                       <div className="space-y-2">
                         {data.categories.map((cat: any) => {
@@ -5748,7 +5746,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                       </div>
                     </div>
 
-                    <div className="bg-slate-900/60 border border-white/5 p-1.5.5 rounded-3xl flex flex-col justify-between text-slate-100">
+                    <div className="bg-slate-900/60 border border-white/5 p-4 sm:p-5 rounded-3xl flex flex-col justify-between text-slate-100">
                       <div>
                         <h3 className="text-sm font-extrabold mb-3 uppercase tracking-wider text-slate-400">Live Table Occupancy Rate</h3>
                         <p className="text-xs text-slate-400 mb-4">Current real-time layout metrics for waiter coordination.</p>
@@ -5777,7 +5775,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                   </div>
 
                   {/* Active Orders Log */}
-                  <div className="bg-slate-900/60 border border-white/5 p-1.5.5 rounded-3xl text-slate-100">
+                  <div className="bg-slate-900/60 border border-white/5 p-4 sm:p-5 rounded-3xl text-slate-100">
                     <h3 className="text-sm font-extrabold mb-4 uppercase tracking-wider text-slate-400">Real-Time POS Billing Logs</h3>
                     <div className="overflow-x-auto">
                       <table className="w-full text-left border-collapse text-xs">
@@ -5938,7 +5936,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
               {activeManagerTab === 'inventory' && (
                 <div className="space-y-3">
                   {/* Stock Ordering Form (Purchase Orders) */}
-                  <div className="bg-slate-900/60 border border-white/5 p-1.5.5 rounded-3xl text-slate-100">
+                  <div className="bg-slate-900/60 border border-white/5 p-4 sm:p-5 rounded-3xl text-slate-100">
                     <h3 className="text-sm font-extrabold mb-3 uppercase tracking-wider text-slate-400 flex items-center gap-2">
                       <Truck className="h-4 w-4 text-rose-500" /> Restock / Create Supplier Purchase Order
                     </h3>
@@ -6095,7 +6093,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
               {/* TAB 4: EMPLOYEES & SHIFTS */}
               {activeManagerTab === 'shifts' && (
                 <div className="space-y-3">
-                  <div className="bg-slate-900/60 border border-white/5 p-1.5.5 rounded-3xl text-slate-100">
+                  <div className="bg-slate-900/60 border border-white/5 p-4 sm:p-5 rounded-3xl text-slate-100">
                     <h3 className="text-sm font-extrabold mb-3 uppercase tracking-wider text-slate-400">
                       Schedule Employee Shift
                     </h3>
@@ -6189,7 +6187,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                     </form>
                   </div>
 
-                  <div className="bg-slate-900/60 border border-white/5 p-1.5.5 rounded-3xl text-slate-100">
+                  <div className="bg-slate-900/60 border border-white/5 p-4 sm:p-5 rounded-3xl text-slate-100">
                     <h3 className="text-sm font-extrabold mb-3 uppercase tracking-wider text-slate-400">
                       Manage Chef, Waiter & Cashier Records
                     </h3>
@@ -6225,7 +6223,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                         <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Email *</label>
                         <input type="email" value={staffForm.email} onChange={(e) => setStaffForm({ ...staffForm, email: e.target.value })} className="w-full bg-slate-950 border border-white/10 p-1.5 sm:p-2 rounded-xl text-sm sm:text-xs text-white" placeholder="staff@email.com" />
                       </div>
-                      <div className="bg-rose-500/10 border border-rose-500/20 text-rose-305 rounded-xl p-2.5 flex flex-col justify-center">
+                      <div className="bg-rose-500/10 border border-rose-500/20 text-rose-300 rounded-xl p-2.5 flex flex-col justify-center">
                         <span className="text-[10px] font-bold text-rose-300 uppercase mb-0.5 flex items-center gap-1"><Shield className="h-3 w-3" /> Invitation Flow</span>
                         <span className="text-[9px] text-rose-400 leading-tight">Password setup is handled securely via the invitation email link.</span>
                       </div>
@@ -6290,7 +6288,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                     </div>
                   </div>
 
-                  <div className="bg-slate-900/60 border border-white/5 p-1.5.5 rounded-3xl text-slate-100">
+                  <div className="bg-slate-900/60 border border-white/5 p-4 sm:p-5 rounded-3xl text-slate-100">
                     <h3 className="text-sm font-extrabold mb-3 uppercase tracking-wider text-slate-400">
                       Staff Access Requests
                     </h3>
@@ -6448,7 +6446,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
               {/* TAB 6: OPERATIONAL EXPENSES */}
               {activeManagerTab === 'expenses' && (
                 <div className="space-y-3">
-                  <div className="bg-slate-900/60 border border-white/5 p-1.5.5 rounded-3xl text-slate-100">
+                  <div className="bg-slate-900/60 border border-white/5 p-4 sm:p-5 rounded-3xl text-slate-100">
                     <h3 className="text-sm font-extrabold mb-3 uppercase tracking-wider text-slate-400">
                       Record Business Expense
                     </h3>
@@ -6576,7 +6574,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
               {/* TAB 7: COUPONS */}
               {activeManagerTab === 'coupons' && (
                 <div className="space-y-3">
-                  <div className="bg-slate-900/60 border border-white/5 p-1.5.5 rounded-3xl text-slate-100">
+                  <div className="bg-slate-900/60 border border-white/5 p-4 sm:p-5 rounded-3xl text-slate-100">
                     <h3 className="text-sm font-extrabold mb-3 uppercase tracking-wider text-slate-400">
                       Create Discount Coupon Promo Code
                     </h3>
@@ -6725,7 +6723,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
         {/* ROLE C: CHEF KITCHEN DISPLAY SYSTEM (KDS)                */}
         {/* ======================================================= */}
         {currentRole === 'chef' && (
-          <div className="flex-1 p-2 md:p-1.5.5 max-w-7xl mx-auto w-full space-y-3">
+          <div className="flex-1 p-2 md:p-4 sm:p-5 max-w-7xl mx-auto w-full space-y-3">
             {!hasAccessToModule(currentRole, 'Orders') ? (
               <div className="bg-slate-900/60 backdrop-blur-md border border-white/5 p-2 rounded-3xl text-center space-y-2 max-w-md mx-auto my-12 text-slate-200">
                 <div className="w-16 h-16 bg-rose-500/10 text-rose-500 rounded-full flex items-center justify-center mx-auto border border-rose-500/20 animate-pulse">
@@ -6741,7 +6739,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
               </div>
             ) : (
               <>
-            <div className="bg-slate-900/60 backdrop-blur-md border border-white/5 text-white rounded-3xl p-1.5.5 shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
+            <div className="bg-slate-900/60 backdrop-blur-md border border-white/5 text-white rounded-3xl p-4 sm:p-5 shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
               <div className="flex items-center gap-3">
                 <div className="bg-amber-500 text-slate-950 p-2.5 rounded-2xl">
                   <Flame className="h-6 w-6 animate-pulse" />
@@ -6770,7 +6768,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
             </div>
 
             {chefActiveSubTab === 'history' ? (
-              <div className="bg-slate-900/60 backdrop-blur-md border border-white/5 p-1.5.5 rounded-3xl text-left text-white space-y-3">
+              <div className="bg-slate-900/60 backdrop-blur-md border border-white/5 p-4 sm:p-5 rounded-3xl text-left text-white space-y-3">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-white/5 pb-4 gap-2">
                   <div>
                     <h3 className="font-extrabold text-base text-white">📜 Cooking Performance History</h3>
@@ -7011,7 +7009,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
         {/* ROLE D: WAITER INTERACTIVE DASHBOARD                     */}
         {/* ======================================================= */}
         {currentRole === 'waiter' && (
-          <div className="flex-1 p-2 md:p-1.5.5 max-w-7xl mx-auto w-full space-y-3">
+          <div className="flex-1 p-2 md:p-4 sm:p-5 max-w-7xl mx-auto w-full space-y-3">
             {!hasAccessToModule(currentRole, 'Orders') ? (
               <div className="bg-slate-900/60 backdrop-blur-md border border-white/5 p-2 rounded-3xl text-center space-y-2 max-w-md mx-auto my-12 text-slate-200">
                 <div className="w-16 h-16 bg-rose-500/10 text-rose-500 rounded-full flex items-center justify-center mx-auto border border-rose-500/20 animate-pulse">
@@ -7075,7 +7073,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                   </div>
                 )}
 
-                <div className="bg-slate-900/60 backdrop-blur-md border border-white/5 text-white rounded-3xl p-1.5.5 shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
+                <div className="bg-slate-900/60 backdrop-blur-md border border-white/5 text-white rounded-3xl p-4 sm:p-5 shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
                   <div className="flex items-center gap-3">
                     <div className="bg-rose-500/10 text-rose-500 p-2.5 rounded-2xl border border-rose-500/20">
                       <Users className="h-6 w-6" />
@@ -7104,7 +7102,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                 </div>
 
                 {waiterActiveSubTab === 'history' ? (
-                  <div className="bg-slate-900/60 backdrop-blur-md border border-white/5 p-1.5.5 rounded-3xl text-left text-white space-y-3">
+                  <div className="bg-slate-900/60 backdrop-blur-md border border-white/5 p-4 sm:p-5 rounded-3xl text-left text-white space-y-3">
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-white/5 pb-4 gap-2">
                       <div>
                         <h3 className="font-extrabold text-base text-white">📜 Waiter Service History Ledger</h3>
@@ -7194,13 +7192,13 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                   </div>
                 ) : (
                   <>
-                  <div className="bg-slate-900/60 backdrop-blur-md border border-white/5 p-1.5.5 rounded-3xl text-left text-white shadow-sm">
+                  <div className="bg-slate-900/60 backdrop-blur-md border border-white/5 p-4 sm:p-5 rounded-3xl text-left text-white shadow-sm">
                     <h3 className="font-extrabold text-xs uppercase tracking-wider text-slate-400 mb-4">Live Table Grid</h3>
                     <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
                       {data.tables.map((table: any) => {
                         const occupancyColors: Record<string, string> = {
                           available: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-305 hover:bg-emerald-500/20',
-                          occupied: 'bg-rose-500/10 border-rose-500/20 text-rose-305 hover:bg-rose-500/20',
+                          occupied: 'bg-rose-500/10 border-rose-500/20 text-rose-300 hover:bg-rose-500/20',
                           reserved: 'bg-purple-500/10 border-purple-500/20 text-purple-305 hover:bg-purple-500/20'
                         };
 
@@ -7245,7 +7243,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 text-left">
                       
                       {/* Panel A: Status and Actions */}
-                      <div className="bg-slate-900/60 backdrop-blur-md border border-white/5 p-1.5.5 rounded-3xl text-white shadow-sm space-y-3">
+                      <div className="bg-slate-900/60 backdrop-blur-md border border-white/5 p-4 sm:p-5 rounded-3xl text-white shadow-sm space-y-3">
                         <div className="flex justify-between items-center border-b border-white/5 pb-4">
                           <h3 className="font-extrabold text-base text-white">Manage Table #{selectedWaiterTable.tableNumber}</h3>
                           <button 
@@ -7618,7 +7616,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                       </div>
 
                       {/* Panel B: Table Digital QR Simulator */}
-                      <div className="bg-slate-900/60 backdrop-blur-md border border-white/5 p-1.5.5 rounded-3xl text-white shadow-sm flex flex-col items-center justify-center text-center">
+                      <div className="bg-slate-900/60 backdrop-blur-md border border-white/5 p-4 sm:p-5 rounded-3xl text-white shadow-sm flex flex-col items-center justify-center text-center">
                         <Smartphone className="h-10 w-10 text-rose-500 mb-2" />
                         <h3 className="font-extrabold text-sm text-white mb-1">Interactive Table QR Code</h3>
                         <p className="text-xs text-slate-400 max-w-sm mb-4">Guests can scan this physical QR code on their phones to view digital menu, reserve tables, or pay bills with UPI/Wallets.</p>
@@ -7659,7 +7657,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
         {/* ROLE E: CASHIER BILLING & PAYMENT GATEWAY                */}
         {/* ======================================================= */}
         {currentRole === 'cashier' && (
-          <div className="flex-1 p-2 md:p-1.5.5 max-w-7xl mx-auto w-full space-y-3">
+          <div className="flex-1 p-2 md:p-4 sm:p-5 max-w-7xl mx-auto w-full space-y-3">
             {!hasAccessToModule(currentRole, 'Orders') ? (
               <div className="bg-slate-900/60 backdrop-blur-md border border-white/5 p-2 rounded-3xl text-center space-y-2 max-w-md mx-auto my-12 text-slate-200">
                 <div className="w-16 h-16 bg-rose-500/10 text-rose-500 rounded-full flex items-center justify-center mx-auto border border-rose-500/20 animate-pulse">
@@ -7718,7 +7716,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                   </div>
                 )}
 
-                <div className="bg-slate-900/60 backdrop-blur-md border border-white/5 text-white rounded-3xl p-1.5.5 shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
+                <div className="bg-slate-900/60 backdrop-blur-md border border-white/5 text-white rounded-3xl p-4 sm:p-5 shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
                   <div className="flex items-center gap-3">
                     <div className="bg-emerald-550 text-slate-950 p-2.5 rounded-2xl">
                       <DollarSign className="h-6 w-6" />
@@ -7747,7 +7745,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                 </div>
 
                 {cashierActiveSubTab === 'history' ? (
-                  <div className="bg-slate-900/60 backdrop-blur-md border border-white/5 p-1.5.5 rounded-3xl text-left text-white space-y-3">
+                  <div className="bg-slate-900/60 backdrop-blur-md border border-white/5 p-4 sm:p-5 rounded-3xl text-left text-white space-y-3">
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-white/5 pb-4 gap-2">
                       <div>
                         <h3 className="font-extrabold text-base text-white">📜 Transaction & Payment Logs</h3>
@@ -7811,7 +7809,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
                     
                     {/* Column 1 & 2: Active Unpaid Check Orders */}
-                    <div className="bg-slate-955/40 border border-white/5 rounded-3xl p-1.5.5 text-white text-left lg:col-span-2 space-y-2">
+                    <div className="bg-slate-955/40 border border-white/5 rounded-3xl p-4 sm:p-5 text-white text-left lg:col-span-2 space-y-2">
                       <h3 className="font-extrabold text-sm uppercase tracking-wider text-slate-400">Unpaid Active Customer Tickets</h3>
                       
                       {data.orders.filter((o: any) => o.status !== 'completed' && o.status !== 'cancelled' && (o.branch || 'Ichalkaranji').toLowerCase() === (currentUser?.branch || 'Ichalkaranji').toLowerCase()).length === 0 ? (
@@ -7855,7 +7853,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
                     </div>
 
                     {/* Column 3: Payment Checkout Processing Form */}
-                    <div className="bg-slate-955/40 border border-white/5 rounded-3xl p-1.5.5 text-white text-left">
+                    <div className="bg-slate-955/40 border border-white/5 rounded-3xl p-4 sm:p-5 text-white text-left">
                       <h3 className="font-extrabold text-sm uppercase tracking-wider text-slate-400 border-b border-white/5 pb-3 mb-4">Account Checkout Gateway</h3>
 
                       {selectedCashierOrder ? (
@@ -8247,7 +8245,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
               <button onClick={() => setActiveModal(null)} className="text-slate-400 hover:text-white"><X className="h-5 w-5" /></button>
             </div>
             
-            <form onSubmit={handleSaveMenuItemSubmit} className="p-1.5.5 space-y-2">
+            <form onSubmit={handleSaveMenuItemSubmit} className="p-4 sm:p-5 space-y-2">
               <div className="grid grid-cols-2 gap-2">
                 <div className="col-span-2">
                   <label className="block text-[11px] font-bold text-slate-400 uppercase mb-1">Item Title *</label>
@@ -8390,7 +8388,7 @@ export default function RestaurantManagementSystem({ initialUser }: { initialUse
               if (success) {
                 setInventoryForm({ name: '', quantity: '', unit: 'kg', reorderLevel: '5.0', costPerUnit: '', supplierId: '' });
               }
-            }} className="p-1.5.5 space-y-2">
+            }} className="p-4 sm:p-5 space-y-2">
               <div>
                 <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">Ingredient Name *</label>
                 <input 
